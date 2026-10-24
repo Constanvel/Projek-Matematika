@@ -3,29 +3,51 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#102c25">
-  <meta name="description" content="Jelajahi dunia fungsi. Game petualangan edukasi matematika berbahasa Indonesia.">
-  <title>Function Adventure — Jelajahi dunia fungsi</title>
+  <meta name="theme-color" content="#152b25">
+  <meta name="description" content="Gundul Warrior: petualangan platformer 2D untuk menaklukkan fungsi dan komposisi fungsi.">
+  <title>Gundul Warrior — Petualangan Dunia Fungsi</title>
   <link rel="stylesheet" href="./css/style.css">
   <script type="module" src="./js/main.js"></script>
 </head>
 <body>
-  <header class="site-header"><a class="brand" href="./" aria-label="Function Adventure, beranda"><span class="brand-icon">ƒ</span> FUNCTION<span class="brand-light">ADVENTURE</span></a><span class="header-note">SEBUAH PETUALANGAN MATEMATIKA</span><button id="help" class="button-quiet">Petunjuk <span aria-hidden="true">↗</span></button></header>
+  <header class="site-header">
+    <a class="brand" href="./" aria-label="Gundul Warrior, beranda"><span class="brand-symbol" aria-hidden="true">G<span>W</span></span><span>GUNDUL<br><b>WARRIOR</b></span></a>
+    <span class="header-note">SEBUAH PETUALANGAN DUNIA FUNGSI</span>
+    <button id="help" class="quiet">Cara bermain <span aria-hidden="true">↗</span></button>
+  </header>
   <main>
     <section id="home" class="home">
-      <div class="hero-copy"><p class="eyebrow"><span class="live-dot"></span> BELAJAR. JELAJAHI. TAKLUKKAN.</p><h1>Petualangan besar.<br>Dimulai dari<br><em>sebuah fungsi.</em></h1><p class="hero-description">Ada dunia yang menunggu untuk dibuka. Pecahkan teka-teki matematika, temukan kunci, dan jadilah penjelajah Function World.</p><div class="hero-actions"><button id="start" class="button primary">Mulai petualangan <span aria-hidden="true">↗</span></button><button id="continue" class="button secondary" disabled>Lanjutkan</button></div><p class="small-note">Tanpa akun. Tanpa batas waktu. Belajar dengan ritmemu.</p><div class="hero-meta"><span><b>03</b> wilayah misterius</span><span><b>12</b> tantangan fungsi</span><span><b>01</b> petualang: kamu</span></div></div>
-      <div class="world-art" aria-label="Ilustrasi pulau hutan dengan jalur petualangan dan kastel" role="img"><div class="art-grid"></div><span class="art-label">FUNCTION WORLD <span>MAP / 001</span></span><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="floating-formula formula-one">f(g(x))</div><div class="floating-formula formula-two">x → g → f</div><div class="island"><div class="land-top"></div><div class="trail"></div><div class="tree tree-one"></div><div class="tree tree-two"></div><div class="tree tree-three"></div><div class="tree tree-four"></div><div class="mini-castle"><i></i><i></i><i></i><b></b></div><div class="hero-sprite"><span></span></div><div class="art-gate"></div></div><div class="map-pin"><span class="live-dot"></span> Hutan Fungsi <small>Petualanganmu dimulai di sini</small></div><div class="art-coordinate">−6.20° S &nbsp; / &nbsp; 106.81° E <span>DUNIA IMAJINASI</span></div></div>
-      <div class="journey"><div><p class="eyebrow">PETA PERJALANAN</p><h2>Tiga dunia. Selangkah lebih paham.</h2></div><div class="journey-card"><span class="region-icon forest-icon">♧</span><div><small>WILAYAH 01</small><h3>Hutan Fungsi</h3><p>Kenali dasar-dasar fungsi.</p></div></div><div class="journey-card"><span class="region-icon cave-icon">◇</span><div><small>WILAYAH 02</small><h3>Gua Komposisi</h3><p>Temukan urutan yang tepat.</p></div></div><div class="journey-card"><span class="region-icon castle-icon">♜</span><div><small>WILAYAH 03</small><h3>Kastel Matematika</h3><p>Taklukkan tantangan terakhir.</p></div></div></div>
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="dot"></span> PETUALANGAN DIMULAI DARI KEBERANIAN</p>
+        <h1>Kepala boleh<br>gundul.<br><em>Nyali jangan.</em></h1>
+        <p class="hero-description">Lompati rintangan. Pecahkan fungsi. Pulihkan mesin kuno yang menghubungkan tiga dunia.</p>
+        <div class="hero-actions"><button id="start" class="button primary">Mulai petualangan <span aria-hidden="true">→</span></button><button id="continue" class="button secondary" disabled>Lanjutkan</button></div>
+        <p class="small-note">Tanpa batas waktu. Salah? Pelajari, lalu coba lagi.</p>
+      </div>
+      <div class="hero-scene" role="img" aria-label="Gundul Warrior bersiap menjelajahi hutan dan pegunungan">
+        <div class="scene-sun"></div><div class="scene-mountain back"></div><div class="scene-mountain front"></div><div class="scene-tree tree-left"></div><div class="scene-tree tree-right"></div><div class="scene-ground"></div>
+        <span class="scene-coordinate">01 / HUTAN FUNGSI</span>
+        <img class="hero-character" src="./assets/character/processed/posturdepan.png" alt="" width="229" height="493">
+        <div class="scene-plaque"><span>KENALI SANG PETUALANG</span><b>Gundul Warrior</b><small>Berbekal nyali & sedikit matematika.</small></div>
+        <span class="scene-formula">f(g(x))</span>
+      </div>
+      <div class="journey"><div class="journey-intro"><p class="eyebrow">SATU MISI, TIGA WILAYAH</p><h2>Jalan panjang.<br>Langkah pertamamu.</h2></div><div class="region"><span>01</span><h3>Hutan Fungsi</h3><p>Kenali input dan output.</p></div><div class="region"><span>02</span><h3>Gua Komposisi</h3><p>Dua fungsi, satu urutan.</p></div><div class="region"><span>03</span><h3>Kastel Matematika</h3><p>Pulihkan mesin terakhir.</p></div></div>
     </section>
-    <section id="game" hidden>
-      <div class="game-heading"><div><p id="chapter" class="eyebrow"></p><h1 id="level-title"></h1><p id="level-subtitle"></p></div><button id="menu" class="button secondary">Kembali ke menu</button></div>
-      <div class="game-layout"><div class="map-panel"><div class="map-topline"><span><span class="live-dot"></span> EKSPLORASI</span><span id="map-progress"></span></div><div id="board" class="board" tabindex="0" role="group" aria-label="Peta permainan. Gunakan tombol panah atau WASD untuk bergerak."></div><div class="map-bottom"><p id="interaction" aria-live="polite"></p><button id="interact" class="button primary">Interaksi <kbd>E</kbd></button></div><div class="touch-controls" aria-label="Kontrol gerakan"><button data-move="up" aria-label="Atas">↑</button><div><button data-move="left" aria-label="Kiri">←</button><button data-move="down" aria-label="Bawah">↓</button><button data-move="right" aria-label="Kanan">→</button></div></div></div>
-      <aside class="adventure-panel"><p class="eyebrow">CATATAN PENJELAJAH</p><div class="stat"><span>Skor perjalanan</span><strong id="score">0 <small>/ 120</small></strong></div><div class="stat"><span>Kunci ditemukan</span><strong id="keys">0 <small>/ 3</small></strong></div><div id="route" class="route"></div><div class="lesson"><span>INGAT KEMBALI</span><p id="lesson"></p><b>(f ∘ g)(x) = f(g(x))</b></div><p class="control-note"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> atau tombol panah<br><kbd>E</kbd> / <kbd>Enter</kbd> untuk interaksi</p></aside></div>
+    <section id="game" hidden aria-labelledby="level-title">
+      <div class="game-heading"><div><p id="chapter" class="eyebrow"></p><h1 id="level-title"></h1><p id="level-subtitle"></p></div><button id="pause" class="button secondary">Jeda <kbd>Esc</kbd></button></div>
+      <div class="game-shell">
+        <div class="hud"><span class="hud-mission" id="mission">PULIHKAN MESIN FUNGSI</span><div><span>SKOR <b id="score">0</b><small>/120</small></span><span>KUNCI <b id="keys">0</b><small>/3</small></span></div></div>
+        <div class="viewport"><canvas id="board" width="960" height="540" tabindex="0" aria-label="Dunia permainan. A dan D untuk bergerak, Space untuk melompat, E untuk interaksi. Permainan membutuhkan penglihatan untuk navigasi.">Browser ini tidak mendukung Canvas. Gunakan browser modern.</canvas><div id="loading" class="loading" hidden><p id="loading-text">Menyiapkan petualangan…</p><button id="retry" class="button primary" hidden>Coba lagi</button></div></div>
+        <div class="game-bottom"><p id="interaction" role="status">Ikuti jalan menuju mesin pertama.</p><button id="interact" class="button primary" data-control="interact">Interaksi <kbd>E</kbd></button></div>
+        <div class="touch-controls" aria-label="Kontrol sentuh"><div><button data-control="left" aria-label="Bergerak kiri">←</button><button data-control="right" aria-label="Bergerak kanan">→</button></div><button data-control="jump" class="jump" aria-label="Melompat">Lompat ↑</button></div>
+      </div>
+      <div class="game-notes"><span><kbd>A</kbd> <kbd>D</kbd> berjalan <span class="separator">/</span> <kbd>Space</kbd> melompat <span class="separator">/</span> <kbd>E</kbd> interaksi</span><span id="checkpoint-status" role="status">Checkpoint: awal wilayah</span></div>
+      <div class="lesson-strip"><b>CATATAN PERJALANAN</b><p id="lesson"></p><span id="map-progress"></span></div>
     </section>
-    <section id="victory" class="victory" hidden><p class="eyebrow">PETUALANGAN SELESAI</p><div class="victory-mark">♜</div><h1>Dunia fungsi,<br><em>berhasil ditaklukkan.</em></h1><p>Setiap langkah membawamu lebih dekat pada pemahaman baru.</p><div id="final-stats" class="final-stats"></div><button id="replay" class="button primary">Mulai petualangan baru ↗</button><button id="victory-menu" class="button secondary">Menu utama</button></section>
+    <section id="victory" class="victory" hidden><p class="eyebrow">MESIN FUNGSI TELAH PULIH</p><img src="./assets/character/processed/posturmelambai.png" alt="Gundul Warrior melambai" width="140" height="194"><h1>Nyali besar.<br><em>Misi tuntas.</em></h1><p>Tiga wilayah dilalui. Setiap kesalahan menjadi pelajaran.</p><div id="final-stats" class="final-stats"></div><div class="hero-actions"><button id="replay" class="button primary">Petualangan baru</button><button id="victory-menu" class="button secondary">Menu utama</button></div></section>
     <p id="notice" role="status" class="notice" hidden></p>
   </main>
-  <footer><span>FUNCTION ADVENTURE <span class="footer-dot">/</span> Belajar melalui petualangan.</span><button id="about" class="button-quiet">Tentang game</button><span>DIRANCANG UNTUK RASA INGIN TAHU.</span></footer>
-  <dialog id="modal" aria-labelledby="dialog-title"><form id="question-form"><div class="dialog-top"><span id="dialog-kicker" class="eyebrow">CATATAN PETUALANGAN</span><button type="button" id="close-modal" class="close-button" aria-label="Tutup dialog">×</button></div><h2 id="dialog-title"></h2><div id="dialog-content"></div><div id="question-fields" hidden><p id="function-def" class="function-def"></p><p id="question-prompt"></p><div id="answer-area"></div><div class="question-actions"><button type="submit" id="check" class="button primary">Periksa jawaban</button><button type="button" id="hint" class="button secondary">Lihat petunjuk</button></div><p id="hint-text" class="hint" hidden></p><div id="feedback" role="status"></div></div><div id="dialog-actions" class="dialog-actions"></div></form></dialog>
+  <footer><span>GUNDUL WARRIOR <span class="separator">/</span> Belajar melalui petualangan.</span><button id="about" class="quiet">Tentang game</button></footer>
+  <dialog id="modal" aria-labelledby="dialog-title"><form id="question-form" novalidate><div class="dialog-top"><span id="dialog-kicker" class="eyebrow">CATATAN PETUALANGAN</span><button type="button" id="close-modal" class="close-button" aria-label="Tutup dialog">×</button></div><h2 id="dialog-title"></h2><div id="dialog-content"></div><div id="question-fields" hidden><div id="machine-flow" class="machine-flow" aria-label="Urutan pengerjaan fungsi"></div><p id="function-def" class="function-def"></p><p id="question-prompt"></p><div id="answer-area"></div><div class="question-actions"><button type="submit" id="check" class="button primary">Periksa jawaban</button><button type="button" id="hint" class="button secondary">Petunjuk</button></div><p id="hint-text" class="hint" hidden></p><div id="feedback" role="status"></div></div><div id="dialog-actions" class="dialog-actions"></div></form></dialog>
 </body>
 </html>

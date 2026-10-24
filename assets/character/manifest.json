@@ -1,0 +1,286 @@
+{
+  "schema_version": 1,
+  "generator": "scripts/prepare-character.py",
+  "dependencies": [
+    "Pillow",
+    "numpy",
+    "opencv-python"
+  ],
+  "source_archive": "karakter.zip",
+  "source_archive_sha256": "53fa06f320c3365f7dd02f4e29d7d4ad4896fa829f1ef75c1861b6cc6d944a42",
+  "output_mode": "RGBA",
+  "canvas_size": [
+    448,
+    544
+  ],
+  "foot_anchor": [
+    224,
+    528
+  ],
+  "foot_anchor_normalized": [
+    0.5,
+    0.9705882352941176
+  ],
+  "normalization": "Uniform scale from estimated skin/head width (target 128px), capped to canvas; content horizontally centered and lowest foot aligned to y=528. No stretching.",
+  "segmentation": "8-connected edge flood of light near-neutral checkerboard (min RGB >=180; channel range <=22); selective one-pixel edge unmatting; premultiplied-alpha Lanczos resize.",
+  "limitations": [
+    "The white/gray checkerboard is baked into opaque RGB originals; true original alpha is unavailable.",
+    "Boundary alpha and colors are estimated, not losslessly recovered. Fine edge pixels may differ from the source artwork.",
+    "Only edge-connected light regions are removed, preserving enclosed white eyes, metal, and back emblem. Enclosed background islands are not globally color-keyed.",
+    "Head-width scale is heuristic; body proportions and running/waving pose heights intentionally differ. The anchor is the horizontal content center at the lowest visible foot, not an anatomical ankle pivot."
+  ],
+  "poses": {
+    "posturbelakang.png": {
+      "original_size": [
+        226,
+        500
+      ],
+      "source_content_bbox": [
+        13,
+        23,
+        217,
+        482
+      ],
+      "estimated_head_width": 126,
+      "uniform_scale": 1.015873,
+      "resized_content_size": [
+        207,
+        466
+      ],
+      "content_offset": [
+        121,
+        62
+      ],
+      "output_content_bbox": [
+        121,
+        62,
+        328,
+        528
+      ],
+      "removed_background_pixels": 49966,
+      "transparent_pixels": 176604,
+      "opaque_pixels": 62103,
+      "partial_alpha_pixels": 5005,
+      "original": "original/posturbelakang.png",
+      "processed": "processed/posturbelakang.png",
+      "original_sha256": "884747fd2b09d0425c89e5f75f073589ac22a68c9eb9bf8414c4d44b50868434",
+      "processed_sha256": "ddd0629eed170932e53ca291ecc6d6f6774b9a6f4eafa5bd4430fc60c2033ccb"
+    },
+    "posturberjalan.png": {
+      "original_size": [
+        237,
+        311
+      ],
+      "source_content_bbox": [
+        18,
+        11,
+        220,
+        305
+      ],
+      "estimated_head_width": 81,
+      "uniform_scale": 1.580247,
+      "resized_content_size": [
+        319,
+        465
+      ],
+      "content_offset": [
+        65,
+        63
+      ],
+      "output_content_bbox": [
+        65,
+        63,
+        384,
+        528
+      ],
+      "removed_background_pixels": 44983,
+      "transparent_pixels": 168109,
+      "opaque_pixels": 66517,
+      "partial_alpha_pixels": 9086,
+      "original": "original/posturberjalan.png",
+      "processed": "processed/posturberjalan.png",
+      "original_sha256": "a970c616567322e5b50df3abcea04ace455c37b766f6a3643293bf84675da8ce",
+      "processed_sha256": "b46db9a786aa658b41c3d0e696c18cf83067b7449e1a46953647ac1a435d08ac"
+    },
+    "posturberlari.png": {
+      "original_size": [
+        260,
+        285
+      ],
+      "source_content_bbox": [
+        17,
+        16,
+        231,
+        279
+      ],
+      "estimated_head_width": 78,
+      "uniform_scale": 1.641026,
+      "resized_content_size": [
+        351,
+        432
+      ],
+      "content_offset": [
+        49,
+        96
+      ],
+      "output_content_bbox": [
+        49,
+        96,
+        400,
+        528
+      ],
+      "removed_background_pixels": 46189,
+      "transparent_pixels": 164157,
+      "opaque_pixels": 69322,
+      "partial_alpha_pixels": 10233,
+      "original": "original/posturberlari.png",
+      "processed": "processed/posturberlari.png",
+      "original_sha256": "57d01cda5c04a07e206ea539d7b278f3c5deab67b74f53ef500f14f017ed101b",
+      "processed_sha256": "c02e89fff522d331e3f40c4eb72f9cadda865905363ddd49f9a4b33d147d85ed"
+    },
+    "posturdepan.png": {
+      "original_size": [
+        229,
+        493
+      ],
+      "source_content_bbox": [
+        11,
+        16,
+        215,
+        482
+      ],
+      "estimated_head_width": 128,
+      "uniform_scale": 1.0,
+      "resized_content_size": [
+        204,
+        466
+      ],
+      "content_offset": [
+        122,
+        62
+      ],
+      "output_content_bbox": [
+        122,
+        62,
+        326,
+        528
+      ],
+      "removed_background_pixels": 47812,
+      "transparent_pixels": 178627,
+      "opaque_pixels": 64155,
+      "partial_alpha_pixels": 930,
+      "original": "original/posturdepan.png",
+      "processed": "processed/posturdepan.png",
+      "original_sha256": "215a2bb27fbab0f857c590b714f424d4c6a826f79087ef11af3963b1bb356711",
+      "processed_sha256": "947b859a3ee6f60ab561f18a56f0f9c479267ca7496a631ae1283d078ddb130d"
+    },
+    "posturkanan.png": {
+      "original_size": [
+        150,
+        469
+      ],
+      "source_content_bbox": [
+        5,
+        4,
+        142,
+        462
+      ],
+      "estimated_head_width": 113,
+      "uniform_scale": 1.117904,
+      "resized_content_size": [
+        153,
+        512
+      ],
+      "content_offset": [
+        148,
+        16
+      ],
+      "output_content_bbox": [
+        148,
+        16,
+        301,
+        528
+      ],
+      "removed_background_pixels": 26773,
+      "transparent_pixels": 187215,
+      "opaque_pixels": 51445,
+      "partial_alpha_pixels": 5052,
+      "original": "original/posturkanan.png",
+      "processed": "processed/posturkanan.png",
+      "original_sha256": "53ea355f6e770dd3f2e1c2c8da14ee2390b768f880bfd0c03dba2af2bcb35b14",
+      "processed_sha256": "26dd11a477ee73a44a1615e16929b1cde4ec1947ac45a634cb5655526734dc55"
+    },
+    "posturkiri.png": {
+      "original_size": [
+        178,
+        473
+      ],
+      "source_content_bbox": [
+        27,
+        10,
+        158,
+        468
+      ],
+      "estimated_head_width": 110,
+      "uniform_scale": 1.117904,
+      "resized_content_size": [
+        146,
+        512
+      ],
+      "content_offset": [
+        151,
+        16
+      ],
+      "output_content_bbox": [
+        151,
+        16,
+        297,
+        528
+      ],
+      "removed_background_pixels": 41147,
+      "transparent_pixels": 188048,
+      "opaque_pixels": 50547,
+      "partial_alpha_pixels": 5117,
+      "original": "original/posturkiri.png",
+      "processed": "processed/posturkiri.png",
+      "original_sha256": "05419ef80ff5668051b996591adf1fa0f3e458c95d44fa727ec9e1e74d527cee",
+      "processed_sha256": "44aa2d3786ea2f1072b8b66d3c79c38579d2dcabf142848b1e8de3ff0e775c91"
+    },
+    "posturmelambai.png": {
+      "original_size": [
+        238,
+        329
+      ],
+      "source_content_bbox": [
+        24,
+        7,
+        215,
+        317
+      ],
+      "estimated_head_width": 92,
+      "uniform_scale": 1.391304,
+      "resized_content_size": [
+        266,
+        431
+      ],
+      "content_offset": [
+        91,
+        97
+      ],
+      "output_content_bbox": [
+        91,
+        97,
+        357,
+        528
+      ],
+      "removed_background_pixels": 41996,
+      "transparent_pixels": 169833,
+      "opaque_pixels": 65482,
+      "partial_alpha_pixels": 8397,
+      "original": "original/posturmelambai.png",
+      "processed": "processed/posturmelambai.png",
+      "original_sha256": "f9d6e4a38b3a581c459e8a7b0eb3db3b144f007838a9b783f55140c6fc765920",
+      "processed_sha256": "153a35b41b01878ff04821a6a927739e77baba6524edf22bde11380aa9280b41"
+    }
+  }
+}

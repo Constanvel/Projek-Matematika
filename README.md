@@ -1,18 +1,84 @@
-# Function Adventure
+# Gundul Warrior
 
-Game petualangan edukasi untuk siswa SMA/SMK yang mempelajari fungsi dan komposisi fungsi. Dibangun dengan HTML, CSS, dan JavaScript tanpa framework, backend, atau aset eksternal.
+Platformer edukasi 2D side-scrolling berbahasa Indonesia. Bergerak ke kiri–kanan, melompat, dan pulihkan mesin matematika untuk membuka jembatan serta gerbang. HTML, CSS, JavaScript ES modules, Canvas 2D, dan localStorage; tanpa framework, backend, atau aset CDN.
 
 ## Menjalankan
 
-Memerlukan Node.js 20 atau lebih baru. Tidak perlu menginstal dependensi.
+Node.js 20 atau lebih baru:
 
 ```sh
 npm start
 ```
 
-Buka http://localhost:4173. Hentikan server dengan `Ctrl+C`.
+Buka http://localhost:4173. Server hanya untuk pengembangan lokal. Tidak perlu `npm install` untuk memainkan game; dependensi npm hanya untuk pengujian browser. Jangan buka `index.html` melalui `file://` karena memakai ES modules.
 
-Jangan membuka `index.html` langsung melalui `file://`, karena aplikasi menggunakan ES modules. Server bawaan hanya untuk pengembangan lokal dan tidak untuk deployment publik.
+## Cara bermain
+
+- **A/D** atau panah kiri/kanan: berjalan.
+- **Space**, **W**, atau panah atas: melompat. Tahan untuk lompatan lebih tinggi.
+- **E** atau tombol **Interaksi**: gunakan mesin atau peti terdekat.
+- **Esc**: jeda. Dunia juga berhenti ketika tab kehilangan fokus.
+- Pada layar sentuh, tahan arah sambil menekan **Lompat**.
+
+Dekati mesin untuk menjawab soal. Jawaban benar memberi 10 poin sekali dan membuka pengunci/jembatan. Jawaban salah memberikan pembahasan dan kesempatan mencoba kembali tanpa penalti. Mesin selesai dapat ditinjau ulang. Dunia berhenti saat soal terbuka.
+
+Bendera menyimpan checkpoint. Menyelesaikan mesin juga langsung menyimpan titik aman di dekat terminal. Jatuh mengembalikan karakter ke checkpoint; jawaban dan skor tidak hilang. Dua mesin di gua memperlihatkan urutan fungsi dan hasil antara setelah berhasil. Lanjutkan permainan dari browser dan origin yang sama.
+
+## Wilayah
+
+| Wilayah | Soal | Tujuan |
+| --- | --- | --- |
+| Hutan Fungsi | q1–q3 | Substitusi dan pengenalan fungsi |
+| Gua Komposisi | q4–q6 | Komposisi numerik dan urutan |
+| Kastel Matematika | q7–q9 | Komposisi kuadrat dan aljabar |
+| Ruang harta di dalam kastel | q10–q12 | Tantangan gabungan |
+
+Tiga wilayah memakai geometri berbeda. Tiga soal utama tiap wilayah menghasilkan satu kunci. Tiga kunci membuka ruang harta kastel. Selesaikan 12 soal, lalu berinteraksi dengan peti terakhir untuk menang. Skor maksimal 120.
+
+## Arsitektur
+
+```text
+index.html                     Menu, Canvas, HUD, dan dialog
+css/style.css                  Tampilan dan responsivitas
+js/main.js                     Orkestrasi layar dan progres
+js/game/engine.js              Fixed-step loop, kamera, checkpoint
+js/game/physics.js             Gerak, gravitasi, swept AABB
+js/game/input.js               Keyboard dan multi-pointer
+js/game/renderer.js            Lingkungan, karakter, efek
+js/game/assets.js              Preload gambar
+js/ui/questions.js             Soal, petunjuk, pembahasan
+js/data/levels.js              Geometri dan objek tiga wilayah
+js/data/questions.js           12 soal dan validasi jawaban
+js/data/machines.js            Urutan mesin dan nilai antara yang ditulis eksplisit
+js/state.js                    Skor, prasyarat, validasi progres
+js/storage.js                  localStorage
+assets/character/original/     PNG asli dari ZIP pengguna
+assets/character/processed/    PNG RGBA transparan, anchor seragam
+assets/character/manifest.json Metadata dan hash aset
+scripts/prepare-character.py  Persiapan aset reproducible
+```
+
+Simulasi berjalan pada 1/60 detik; rendering memakai requestAnimationFrame. Ada coyote time 100 ms, jump buffer 120 ms, dan variable jump. Collision terpisah dari gambar. Canvas menggunakan koordinat logis 960×540; kamera horizontal dibatasi ukuran dunia.
+
+## Aset karakter
+
+Tujuh pose berasal dari `karakter.zip` yang diberikan pengguna. ZIP sumber tidak diubah. Gambar original disimpan byte-identik; versi processed menghapus latar terang yang terhubung ke tepi, mempertahankan detail interior, serta menormalkan canvas menjadi 448×544 dengan anchor kaki (224, 528).
+
+Untuk memproses ulang, gunakan Python dengan Pillow, NumPy, dan OpenCV. Lihat opsi `--help` pada script. Dependensi Python tidak diperlukan untuk memainkan game.
+
+Transparansi direkonstruksi secara heuristik karena sumber RGB tidak memiliki alpha. Pose bukan spritesheet animasi lengkap; gameplay menggunakan pergantian pose dan bob ringan. Kepemilikan/lisensi karakter tetap mengikuti sumber pengguna. Lingkungan dibuat melalui kode Canvas tanpa aset pihak ketiga.
+
+## Penyimpanan dan batasan
+
+- Namespace baru: `gundul-warrior-v1`. Save `function-adventure-v1` tidak ditimpa atau dimigrasikan.
+- Save menyimpan checkpoint dan fase perjalanan/ruang harta, bukan posisi melayang atau velocity. Save Gundul Warrior v1 yang belum memiliki fase tetap dapat dipulihkan.
+- Save korup, versi tak dikenal, progres melompati gerbang, dan checkpoint tak sah ditolak.
+- Storage ditolak browser tidak menghentikan permainan; peringatan ditampilkan.
+- Tidak ada akun, sinkronisasi, leaderboard, audio, combat, musuh, atau platform bergerak.
+- localStorage bukan penyimpanan antimanipulasi.
+- Seluruh aset lokal; server lokal dapat digunakan tanpa internet. Hosting belum memiliki service worker/offline cache.
+- Navigasi Canvas memerlukan penglihatan. Menu, input soal, dan pembahasan memakai DOM/keyboard; bukan game yang sepenuhnya dapat dimainkan dengan pembaca layar.
+- Ilustrasi lingkungan masih procedural dan animasi karakter terbatas pada pose yang tersedia.
 
 ## Pengujian
 
@@ -20,80 +86,19 @@ Jangan membuka `index.html` langsung melalui `file://`, karena aplikasi mengguna
 npm test
 ```
 
-Pengujian otomatis mencakup ketepatan soal, validasi jawaban, skor tanpa duplikasi, jalur wajib melewati gerbang, dan validasi penyimpanan.
+Unit test meliputi matematika, physics deterministik, input, engine, collision, checkpoint, gerbang, tiga kunci, skor, save, dan kegagalan storage.
 
-## Cara bermain
+Pengujian browser menggunakan Playwright dan Microsoft Edge:
 
-1. Pilih **Mulai petualangan**.
-2. Bergerak menggunakan WASD, tombol panah, atau tombol arah di layar.
-3. Dekati gerbang bernomor dan tekan E, Enter, atau **Interaksi**.
-4. Selesaikan soal untuk membuka gerbang. Pelajari petunjuk dan pembahasan jika kesulitan.
-5. Dekati peti di ujung jalur dan berinteraksi setelah tiga gerbang terbuka.
-6. Kumpulkan tiga kunci dan selesaikan Harta Fungsi untuk menang.
-
-Jawaban benar memberikan 10 poin sekali per soal. Jawaban salah tidak mengurangi poin. Tidak ada batas waktu atau nyawa. Total 12 soal dengan skor maksimal 120.
-
-## Wilayah
-
-| Wilayah | Materi |
-| --- | --- |
-| Hutan Fungsi | Substitusi dan pengenalan fungsi |
-| Gua Komposisi | Komposisi numerik dan urutan fungsi |
-| Kastel Matematika | Komposisi kuadrat dan bentuk aljabar |
-| Harta Fungsi | Tantangan akhir gabungan |
-
-## Fitur MVP
-
-- Menu utama, petunjuk, dan informasi game.
-- Peta grid dengan gerakan, tembok, gerbang, dan peti.
-- Input numerik dan pilihan ganda aljabar.
-- Petunjuk dan pembahasan setelah menjawab.
-- Skor, kunci, hasil wilayah, dan kemenangan.
-- Statistik benar percobaan pertama dan percobaan salah.
-- Simpan otomatis dan lanjutkan menggunakan localStorage.
-- Konfirmasi sebelum mengganti progres dengan permainan baru.
-- Kontrol sentuh, fokus keyboard, dialog native, dan tampilan responsif.
-
-## Struktur
-
-```text
-index.html                Struktur antarmuka
-css/style.css             Desain, ilustrasi CSS, dan responsivitas
-js/main.js                Antarmuka, kontrol, soal, dan perpindahan level
-js/state.js               Status, aturan progres, dan validasi
-js/storage.js             Simpan dan muat progres
-js/data/levels.js         Peta dan metadata wilayah
-js/data/questions.js      Bank soal dan pemeriksaan jawaban
-tests/                    Pengujian otomatis Node.js
-server.js                 Server pengembangan lokal
+```sh
+npm install
+npm run test:browser
 ```
 
-Logika antarmuka, gerakan, dan progres masih digabungkan dalam `main.js` untuk MVP. Pisahkan menjadi modul tambahan ketika kebutuhan berkembang.
+Memerlukan Edge terpasang. Konfigurasi ada di `playwright.config.js`; ubah channel jika menggunakan browser lain. Server pengujian dinyalakan otomatis. Tes mencakup perjalanan nyata melewati seluruh 12 soal hingga kemenangan, jawaban salah, review nilai antara, jeda (termasuk selama loading), reload checkpoint, pembatalan reset, pemulihan kegagalan aset, dan kontrol pointer simultan pada layar 390 px. Screenshot kegagalan dan screenshot mobile tersedia di `test-results/` (diabaikan Git).
 
-## Penyimpanan dan batasan
-
-- Progres hanya tersedia pada browser dan origin yang sama. Menghapus data browser juga menghapus progres.
-- Penyimpanan browser yang ditolak tidak menghentikan permainan, tetapi progres tidak dapat dipertahankan.
-- localStorage bukan sistem penyimpanan antimanipulasi dan tidak cocok untuk leaderboard terpercaya.
-- Empat wilayah menggunakan susunan jalur sama dengan tema berbeda. Variasi geometri peta menjadi pengembangan berikutnya.
-- Aplikasi tidak mengirim data pemain ke API. Server lokal memungkinkan bermain tanpa internet selama Node.js tersedia.
-- Hosting tidak otomatis dapat dibuka ulang secara offline; service worker belum ditambahkan.
-- Efek suara, akun, leaderboard, dan laporan guru belum tersedia.
-- Semua ilustrasi dan objek permainan dibuat melalui CSS dan simbol teks, tanpa aset pihak ketiga.
+Sebelum rilis: playtest keyboard dan sentuh pada perangkat nyata, periksa kenyamanan lompatan, minta guru memvalidasi materi, dan pastikan hak penggunaan karakter.
 
 ## Hosting statis
 
-Unggah `index.html`, folder `css/`, dan folder `js/` ke layanan hosting statis. GitHub Pages dapat menggunakan branch `main`, folder root. Pengaturan Pages belum diaktifkan oleh proyek ini.
-
-## Pemeriksaan manual sebelum rilis
-
-- Uji mulai baru, pembatalan reset, dan lanjutkan pada browser yang sama.
-- Pastikan tembok serta gerbang terkunci tidak dapat dilewati.
-- Uji angka kosong, jawaban salah, pilihan ganda, petunjuk, dan pembahasan.
-- Pastikan satu soal tidak memberikan hadiah dua kali.
-- Muat ulang setelah menjawab, mendapatkan kunci, dan berpindah wilayah.
-- Selesaikan seluruh wilayah dan verifikasi skor serta statistik akhir.
-- Uji keyboard, tombol sentuh, dialog, dan layar kecil.
-- Minta guru memvalidasi materi serta siswa mencoba alur pembelajaran.
-
-Validasi pengembangan: 14 pengujian Node.js lulus; uji browser otomatis melalui Microsoft Edge headless berhasil menyelesaikan 12 soal, reload/lanjutkan, kemenangan, pembatalan reset, dan pemeriksaan overflow pada lebar 390 piksel. Pengujian langsung pada perangkat sentuh serta validasi guru masih diperlukan.
+Unggah `index.html`, `css/`, `js/`, dan `assets/character/processed/` dengan struktur sama. Tidak memerlukan server Node pada hosting. Berkas original, scripts, dan tests tidak diperlukan untuk runtime.

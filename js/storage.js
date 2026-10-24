@@ -1,5 +1,5 @@
 import { validateState } from './state.js';
-const KEY = 'function-adventure-v1';
+export const KEY = 'gundul-warrior-v1';
 export function load() {
   try {
     const raw = localStorage.getItem(KEY);
