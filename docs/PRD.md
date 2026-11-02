@@ -1,6 +1,6 @@
-# PRD — Function Adventure
+# PRD — Gundul Warrior
 
-- **Versi:** 1.0
+- **Versi:** 1.1
 - **Status:** Rancangan produk; bukan pernyataan bahwa seluruh fitur telah selesai.
 - **Arah produk:** Game edukasi komposisi fungsi berbasis website, berupa platformer 2D side-scrolling dengan pixel art.
 - **Bahasa:** Indonesia.
@@ -8,11 +8,13 @@
 
 ## 1. Konteks dan keputusan produk
 
-Dokumen ini menerjemahkan laporan ide Function Adventure menjadi kebutuhan produk yang dapat dikembangkan dan diuji. Petualangan bukan berupa peta top-down atau kumpulan kuis statis: pemain berjalan, melompat, menyeberangi platform, dan memperbaiki mesin matematika untuk membuka jalur.
+Dokumen ini menerjemahkan laporan ide Function Adventure menjadi kebutuhan produk **Gundul Warrior** yang dapat dikembangkan dan diuji. Petualangan bukan berupa peta top-down atau kumpulan kuis statis: pemain berjalan, melompat, menyeberangi platform, dan memperbaiki mesin matematika untuk membuka jalur.
 
 Istilah **Mario-like** merujuk pada struktur platformer: gerak kiri–kanan, gravitasi, lompatan, kamera horizontal, checkpoint, rintangan, serta tujuan di ujung level. Karakter, nama, musik, sprite, susunan level, dan identitas visual harus orisinal atau berlisensi sesuai penggunaan. Tidak menggunakan aset atau merek Mario/Nintendo.
 
-Repositori saat ini memakai nama **Gundul Warrior** dan sudah memiliki fondasi platformer Canvas. Nama **Function Adventure** adalah nama produk dalam PRD ini sesuai laporan sekolah. Penggantian nama aplikasi, namespace penyimpanan, dan aset bukan bagian perubahan dokumentasi ini; implementasinya memerlukan tugas tersendiri agar progres pengguna tidak hilang.
+Nama produk adalah **Gundul Warrior**, konsisten pada menu, identitas HUD, dan kemenangan. Function Adventure adalah asal konsep pendidikan, bukan nama aplikasi. Namespace `gundul-warrior-v1` dipertahankan. Aset sumber tetap disimpan; karakter runtime menggunakan interpretasi pixel art turunan di lokasi terpisah.
+
+**Revisi pengalaman:** game memenuhi viewport, bukan halaman promosi dengan Canvas dalam kartu. Menu dan kemenangan merupakan overlay pada dunia pixel; HUD, jeda, dan kontrol berada di tepi layar. Tombol Layar penuh menggunakan Fullscreen API setelah tindakan pengguna jika tersedia. Rasio dunia tetap dipertahankan saat bermain; portrait boleh memakai letterbox agar medan tidak terpotong.
 
 ## 2. Masalah dan tujuan
 
@@ -76,6 +78,8 @@ Satu sesi penuh ditargetkan sekitar 15–25 menit. Durasi ini merupakan hipotesi
 
 Total: **12 soal, 3 kunci, skor maksimal 120**. Final bukan wilayah keempat yang terpisah. Setiap level memiliki geometri berbeda, bukan hanya pergantian warna. Tidak ada jalur lompatan yang dapat melewati gerbang wajib tanpa menjawab soal.
 
+Setiap wilayah memiliki rangkaian parkour wajib: hutan dua lompatan di atas celah 350 piksel, gua tiga lompatan di atas celah 550 piksel dengan kenaikan pijakan, dan kastel tiga lompatan di atas celah 500 piksel dengan pendaratan naik–turun. Angka celah adalah panjang rangkaian yang memiliki pijakan antara, bukan jarak satu lompatan. Checkpoint berada sebelum rangkaian. Berjalan lurus atau melewatkan salah satu lompatan tidak boleh menyelesaikannya. Metadata `parkour` memudahkan pengujian; kontrol tidak melakukan auto-jump untuk pemain.
+
 ## 6. Kebutuhan gameplay
 
 | ID | Kebutuhan MVP | Kriteria penerimaan |
@@ -138,7 +142,7 @@ Contoh di atas adalah acuan materi, bukan kewajiban mengganti bank soal reposito
 - Utamakan skala integer saat ruang layar mencukupi; gunakan letterbox. Pada viewport kecil, skala pecahan diperbolehkan agar kontrol dan soal tetap terbaca, lalu diuji secara visual.
 - Sprite memiliki pose idle, run, jump, dan fall; transisi animasi tidak mengubah collision box.
 - Background berlapis/parallax ringan bersifat dekoratif, bukan permukaan collision. Efek berlebihan dan layar berkedip dihindari.
-- Seluruh font dan aset disimpan lokal. Font bergaya piksel boleh dipakai pada judul, tetapi teks matematika dan pembahasan memakai font yang jelas dan mendukung simbol ∘, −, dan ².
+- Seluruh aset disimpan lokal. Judul memakai logo pixel vektor orisinal; font sistem lokal dipakai untuk UI tanpa unduhan. Teks matematika dan pembahasan harus jelas dan mendukung simbol ∘, −, dan ².
 
 ### Identitas wilayah
 
@@ -150,7 +154,7 @@ Contoh di atas adalah acuan materi, bukan kewajiban mengganti bank soal reposito
 
 Palet dasar: biru tua untuk panel, hijau untuk hutan, emas untuk hadiah, putih terang untuk teks, dan abu-abu untuk objek terkunci. Status tidak boleh disampaikan lewat warna saja; sertakan ikon dan label. Pertahankan kontras teks normal minimal 4,5:1.
 
-Aset karakter repositori saat ini berasal dari gambar pengguna dengan pose terbatas. Keberadaan aset tersebut **tidak berarti standar pixel art ini sudah terpenuhi**. Penggantian atau adaptasi harus menjaga sumber asli dan memastikan hak penggunaan; jangan menimpa aset asli secara destruktif.
+Aset karakter sumber berasal dari gambar pengguna dengan pose terbatas. Runtime memakai sprite pixel orisinal yang mempertahankan kepala gundul, zirah gelap, bros perak, jubah merah, dan sepatu berat. Animasi ditulis terpisah untuk idle, walk, run, jump, fall, land, dan victory; bukan sekadar tujuh pose sumber. Adaptasi menjaga sumber asli dan hak penggunaan; jangan menimpa aset asli secara destruktif.
 
 ## 9. Layar dan antarmuka
 
@@ -167,6 +171,7 @@ Fokus keyboard masuk ke dialog saat dibuka dan kembali ke pemicu setelah ditutup
 
 - Jawaban benar pertama untuk setiap soal memberikan 10 poin; salah atau meninjau ulang memberikan 0 poin.
 - Tidak ada bonus waktu atau koin bernilai skor dalam MVP, sehingga maksimum tetap 120.
+- Tersedia 55 koin eksplorasi opsional dengan tiga kantong rahasia. Jumlah koin terpisah dari skor matematika dan tidak menjadi syarat tamat. Save v1 lama tanpa `collected` dipulihkan dengan daftar koleksi kosong, tanpa mengubah progres belajar.
 - Setiap tiga soal utama wilayah memberikan satu kunci, maksimum tiga. Tantangan akhir tidak memberikan kunci keempat.
 - Simpan soal selesai, kunci, wilayah/fase, checkpoint aman, status kemenangan, dan versi skema melalui localStorage.
 - Skor dan akses wilayah harus konsisten dengan soal selesai; save tidak boleh membuka level lewat data yang tidak sah.
@@ -236,4 +241,4 @@ Urutan 3–7 merupakan rencana, bukan pekerjaan yang sudah dilaksanakan. Tambahk
 | Rebranding menghapus progres | Jangan ubah namespace otomatis; siapkan migrasi berversi jika disetujui. |
 | Kesulitan berbeda antar siswa | Materi bertahap, petunjuk, pembahasan, dan percobaan tanpa penalti. |
 
-Setelah MVP stabil: efek suara dengan opsi mute, mode latihan, karakter tambahan, wilayah baru, ringkasan kesalahan belajar, dan pengujian offline cache. Leaderboard daring, nyawa, atau batas waktu memerlukan evaluasi tujuan belajar dan spesifikasi terpisah sebelum ditambahkan.
+Musik chiptune orisinal tiga wilayah dan efek suara lokal termasuk lingkup saat ini, dengan mute/volume terpisah dari save belajar dan aktivasi setelah interaksi pengguna. Setelah versi ini stabil: mode latihan, karakter tambahan, wilayah baru, ringkasan kesalahan belajar, dan pengujian offline cache. Leaderboard daring, nyawa, atau batas waktu memerlukan evaluasi tujuan belajar dan spesifikasi terpisah sebelum ditambahkan.

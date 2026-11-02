@@ -4,9 +4,9 @@ Platformer edukasi 2D side-scrolling berbahasa Indonesia. Bergerak ke kiri–kan
 
 ## Dokumen produk
 
-[PRD Function Adventure](docs/PRD.md) menetapkan arah produk sebagai platformer 2D side-scrolling dengan pixel art, terinspirasi mekanik platformer klasik seperti Mario tanpa menyalin aset atau identitasnya. Dokumen mencakup gameplay, materi matematika, standar visual, kriteria penerimaan, dan rencana atomic commit.
+[PRD Gundul Warrior](docs/PRD.md) menetapkan kebutuhan platformer pixel art layar penuh, materi matematika, kontrol, dan kriteria penerimaan. Nama Function Adventure hanya asal konsep laporan sekolah. Implementasi memakai Canvas rendah 480×270 yang diperbesar nearest-neighbor, karakter pixel turunan orisinal, tiga wilayah, koleksi opsional, serta musik chiptune lokal.
 
-PRD merupakan target pengembangan, bukan daftar fitur yang seluruhnya sudah selesai. Implementasi saat ini tetap bernama **Gundul Warrior**; perubahan nama aplikasi, aset karakter, dan penyimpanan progres tidak dilakukan oleh pembaruan dokumentasi ini.
+Menu merupakan overlay di atas dunia, bukan halaman promosi. Permainan memenuhi viewport tanpa memotong rasio medan. Pada ponsel portrait, letterbox menjaga seluruh lebar kamera terlihat dan menyediakan ruang kontrol. Tombol **Layar penuh** menyembunyikan antarmuka browser jika Fullscreen API diizinkan; jika tidak, game tetap mengisi viewport.
 
 ## Menjalankan
 
@@ -24,6 +24,8 @@ Buka http://localhost:4173. Server hanya untuk pengembangan lokal. Tidak perlu `
 - **Space**, **W**, atau panah atas: melompat. Tahan untuk lompatan lebih tinggi.
 - **E** atau tombol **Interaksi**: gunakan mesin atau peti terdekat.
 - **Esc**: jeda. Dunia juga berhenti ketika tab kehilangan fokus.
+- **Pengaturan**: mute dan volume musik/efek; audio baru dimulai setelah interaksi.
+- Koin emas mendorong eksplorasi dan rahasia; tidak menambah skor matematika atau menjadi syarat tamat.
 - Pada layar sentuh, tahan arah sambil menekan **Lompat**.
 
 Dekati mesin untuk menjawab soal. Jawaban benar memberi 10 poin sekali dan membuka pengunci/jembatan. Jawaban salah memberikan pembahasan dan kesempatan mencoba kembali tanpa penalti. Mesin selesai dapat ditinjau ulang. Dunia berhenti saat soal terbuka.
@@ -39,7 +41,9 @@ Bendera menyimpan checkpoint. Menyelesaikan mesin juga langsung menyimpan titik 
 | Kastel Matematika | q7–q9 | Komposisi kuadrat dan aljabar |
 | Ruang harta di dalam kastel | q10–q12 | Tantangan gabungan |
 
-Tiga wilayah memakai geometri berbeda. Tiga soal utama tiap wilayah menghasilkan satu kunci. Tiga kunci membuka ruang harta kastel. Selesaikan 12 soal, lalu berinteraksi dengan peti terakhir untuk menang. Skor maksimal 120.
+Tiga wilayah memakai geometri berbeda. Setiap wilayah memiliki parkour wajib di atas lantai yang terputus: dua lompatan berurutan di hutan, tiga di gua, dan tiga dengan variasi ketinggian di kastel. Bendera sebelum rangkaian menyimpan titik aman. Berjalan lurus atau melewatkan salah satu lompatan tidak dapat menyeberang; pijakan disesuaikan dengan physics sebenarnya. Jalur atas dan tiga kantong rahasia tetap opsional, dengan total 55 koin terpisah dari skor matematika.
+
+Tiga soal utama tiap wilayah menghasilkan satu kunci. Tiga kunci membuka ruang harta kastel. Selesaikan 12 soal, lalu berinteraksi dengan peti terakhir untuk menang. Skor maksimal 120.
 
 ## Arsitektur
 
@@ -50,8 +54,11 @@ js/main.js                     Orkestrasi layar dan progres
 js/game/engine.js              Fixed-step loop, kamera, checkpoint
 js/game/physics.js             Gerak, gravitasi, swept AABB
 js/game/input.js               Keyboard dan multi-pointer
-js/game/renderer.js            Lingkungan, karakter, efek
-js/game/assets.js              Preload gambar
+js/game/renderer.js            Tile pixel, lingkungan, gerbang, partikel
+js/game/pixel-character.js     Sprite pixel turunan dan tujuh jenis animasi
+js/game/menu-scene.js          Pemandangan menu/kemenangan
+js/game/audio.js               Musik chiptune dan efek Web Audio orisinal
+js/game/assets.js              Preload atlas pixel lokal dan pemulihan gagal muat
 js/ui/questions.js             Soal, petunjuk, pembahasan
 js/data/levels.js              Geometri dan objek tiga wilayah
 js/data/questions.js           12 soal dan validasi jawaban
@@ -72,19 +79,22 @@ Tujuh pose berasal dari `karakter.zip` yang diberikan pengguna. ZIP sumber tidak
 
 Untuk memproses ulang, gunakan Python dengan Pillow, NumPy, dan OpenCV. Lihat opsi `--help` pada script. Dependensi Python tidak diperlukan untuk memainkan game.
 
-Transparansi direkonstruksi secara heuristik karena sumber RGB tidak memiliki alpha. Pose bukan spritesheet animasi lengkap; gameplay menggunakan pergantian pose dan bob ringan. Kepemilikan/lisensi karakter tetap mengikuti sumber pengguna. Lingkungan dibuat melalui kode Canvas tanpa aset pihak ketiga.
+Transparansi aset processed direkonstruksi secara heuristik karena sumber RGB tidak memiliki alpha. Sumber dan processed dipertahankan. Runtime tidak menempelkan ilustrasi resolusi tinggi ke dunia pixel: `js/game/pixel-character.js` menggambar interpretasi baru bergrid 32×48 dengan kepala gundul, zirah gelap, bros perak, dan jubah merah. Idle, walk, run, jump, fall, land, dan victory memiliki frame tersendiri. Turunan serta metadata tersedia di `assets/character/pixel/`; hak identitas karakter tetap mengikuti sumber pengguna. Lingkungan, logo pixel, musik tiga wilayah, dan efek suara dibuat secara lokal tanpa aset Mario atau unduhan CDN.
 
 ## Penyimpanan dan batasan
 
 - Namespace baru: `gundul-warrior-v1`. Save `function-adventure-v1` tidak ditimpa atau dimigrasikan.
 - Save menyimpan checkpoint dan fase perjalanan/ruang harta, bukan posisi melayang atau velocity. Save Gundul Warrior v1 yang belum memiliki fase tetap dapat dipulihkan.
+- Koleksi ditambahkan sebagai field opsional `collected`; save lama mendapat daftar kosong tanpa kehilangan soal, skor, atau kunci. Pengaturan audio disimpan terpisah di `gundul-warrior-audio-v1`.
 - Save korup, versi tak dikenal, progres melompati gerbang, dan checkpoint tak sah ditolak.
 - Storage ditolak browser tidak menghentikan permainan; peringatan ditampilkan.
-- Tidak ada akun, sinkronisasi, leaderboard, audio, combat, musuh, atau platform bergerak.
+- Tidak ada akun, sinkronisasi, leaderboard, combat, musuh aktif, atau platform bergerak.
+- Audio disintesis melalui Web Audio setelah gesture; browser tanpa dukungan audio tetap dapat memainkan game.
 - localStorage bukan penyimpanan antimanipulasi.
 - Seluruh aset lokal; server lokal dapat digunakan tanpa internet. Hosting belum memiliki service worker/offline cache.
 - Navigasi Canvas memerlukan penglihatan. Menu, input soal, dan pembahasan memakai DOM/keyboard; bukan game yang sepenuhnya dapat dimainkan dengan pembaca layar.
-- Ilustrasi lingkungan masih procedural dan animasi karakter terbatas pada pose yang tersedia.
+- Sprite dan tile dibuat procedural pada grid piksel; belum memakai editor level atau spritesheet dari seniman eksternal.
+- Belum ada klaim efektivitas belajar, benchmark perangkat sekolah, atau dukungan browser yang belum diuji.
 
 ## Pengujian
 
@@ -92,7 +102,7 @@ Transparansi direkonstruksi secara heuristik karena sumber RGB tidak memiliki al
 npm test
 ```
 
-Unit test meliputi matematika, physics deterministik, input, engine, collision, checkpoint, gerbang, tiga kunci, skor, save, dan kegagalan storage.
+Unit test meliputi matematika, physics deterministik, input, engine, collision, checkpoint, gerbang, tiga kunci, skor, save lama, koleksi, aset gagal muat, dan pengaturan audio. Pengujian level memakai physics sebenarnya untuk memeriksa semua koleksi, perjalanan penuh, serta bukti bahwa setiap lompatan parkour wajib diperlukan.
 
 Pengujian browser menggunakan Playwright dan Microsoft Edge:
 
@@ -101,10 +111,10 @@ npm install
 npm run test:browser
 ```
 
-Memerlukan Edge terpasang. Konfigurasi ada di `playwright.config.js`; ubah channel jika menggunakan browser lain. Server pengujian dinyalakan otomatis. Tes mencakup perjalanan nyata melewati seluruh 12 soal hingga kemenangan, jawaban salah, review nilai antara, jeda (termasuk selama loading), reload checkpoint, pembatalan reset, pemulihan kegagalan aset, dan kontrol pointer simultan pada layar 390 px. Screenshot kegagalan dan screenshot mobile tersedia di `test-results/` (diabaikan Git).
+Memerlukan Edge terpasang. Konfigurasi ada di `playwright.config.js`; ubah channel jika menggunakan browser lain. Server pengujian dinyalakan otomatis. Tes mencakup perjalanan nyata dengan keyboard melewati parkour dan seluruh 12 soal hingga kemenangan, jawaban salah, review nilai antara, jeda (termasuk selama loading), jatuh/respawn, reload checkpoint, pembatalan reset, pemulihan kegagalan atlas pixel, preferensi audio, viewport layar penuh, dan kontrol pointer simultan pada layar 390 px. Screenshot kegagalan dan screenshot mobile tersedia di `test-results/` (diabaikan Git).
 
 Sebelum rilis: playtest keyboard dan sentuh pada perangkat nyata, periksa kenyamanan lompatan, minta guru memvalidasi materi, dan pastikan hak penggunaan karakter.
 
 ## Hosting statis
 
-Unggah `index.html`, `css/`, `js/`, dan `assets/character/processed/` dengan struktur sama. Tidak memerlukan server Node pada hosting. Berkas original, scripts, dan tests tidak diperlukan untuk runtime.
+Unggah `index.html`, `css/`, `js/`, dan `assets/character/pixel/gundul-sheet.png` dengan struktur sama. Tidak memerlukan server Node pada hosting. Berkas original, scripts, dan tests tidak diperlukan untuk runtime.
