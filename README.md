@@ -2,6 +2,12 @@
 
 Platformer edukasi 2D side-scrolling berbahasa Indonesia. Bergerak ke kiri–kanan, melompat, dan pulihkan mesin matematika untuk membuka jembatan serta gerbang. HTML, CSS, JavaScript ES modules, Canvas 2D, dan localStorage; tanpa framework, backend, atau aset CDN.
 
+## Dokumen produk
+
+[PRD Function Adventure](docs/PRD.md) menetapkan arah produk sebagai platformer 2D side-scrolling dengan pixel art, terinspirasi mekanik platformer klasik seperti Mario tanpa menyalin aset atau identitasnya. Dokumen mencakup gameplay, materi matematika, standar visual, kriteria penerimaan, dan rencana atomic commit.
+
+PRD merupakan target pengembangan, bukan daftar fitur yang seluruhnya sudah selesai. Implementasi saat ini tetap bernama **Gundul Warrior**; perubahan nama aplikasi, aset karakter, dan penyimpanan progres tidak dilakukan oleh pembaruan dokumentasi ini.
+
 ## Menjalankan
 
 Node.js 20 atau lebih baru:
