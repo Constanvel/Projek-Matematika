@@ -35,7 +35,7 @@ test('invalid, duplicate, future and gate-skipping collectible saves are rejecte
   }
 });
 
-test('engine collects by proximity once, respects pause and retains collection after falling', () => {
+test('engine collects by proximity once and retains collection after falling', () => {
   const state = freshState();
   const coin = levels[0].collectibles.find(item => item.x < levels[0].gates[0].x && !item.requiresQuestion);
   let calls = 0;

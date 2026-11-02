@@ -500,7 +500,8 @@ export function createRenderer(assets) {
         decorations(world, level, p, camera, animatedTime);
         for (const item of level.collectibles || []) if (visible(item.x - 30, 60, camera)) collectible(world, item, animatedTime, p, collected.has(item.id));
         for (const item of level.signs || []) {
-          const nearMachine = (level.gates || []).some(g => Math.abs(g.x - (player.x + player.w / 2)) < 180 && Math.abs(g.x - item.x) < 350);
+          const nearMachine = (level.gates || []).some(g => Math.abs(g.x - item.x) < 180
+            || (Math.abs(g.x - (player.x + player.w / 2)) < 180 && Math.abs(g.x - item.x) < 350));
           if (!nearMachine && visible(item.x - 220, 440, camera)) sign(world, item, p);
         }
         for (const item of level.checkpoints || []) if (visible(item.x - 70, 140, camera)) checkpoint(world, item, progress.checkpoint === item.id, (item.requiresKeys || 0) > keys || Boolean(item.requiresQuestion && !solved.has(item.requiresQuestion)), animatedTime, p);
