@@ -10,7 +10,8 @@ const distanceToInterval = (value, min, max) => Math.max(min - value, 0, value -
 
 export class GameEngine {
   constructor({ canvas, level, getProgress = () => ({}), onInteract = noop,
-    onCheckpoint = noop, onFall = noop, onFrame = noop, draw = noop, onPause = noop }) {
+    onCheckpoint = noop, onFall = noop, onFrame = noop, draw = noop, onPause = noop,
+    onCollect = noop, onEvent = noop }) {
     this.canvas = canvas;
     this.canvas.width = WIDTH;
     this.canvas.height = HEIGHT;
@@ -23,6 +24,10 @@ export class GameEngine {
     this.onFrame = onFrame;
     this.draw = draw;
     this.onPause = onPause;
+    this.onCollect = onCollect;
+    this.onEvent = onEvent;
+    this.collected = new Set(this.getProgress()?.collected || []);
+    this.effects = [];
     this.running = false;
     this.paused = false;
     this.frameId = null;
@@ -96,9 +101,34 @@ export class GameEngine {
   updateCamera() {
     const center = this.player.x + this.player.w / 2;
     const screenX = center - this.camera;
-    if (screenX > WIDTH * 0.45) this.camera = center - WIDTH * 0.45;
-    else if (screenX < WIDTH * 0.3) this.camera = center - WIDTH * 0.3;
+    const moving = Math.abs(this.player.vx) > 20;
+    let target = this.camera;
+    if (moving) target = center - WIDTH * (this.player.facing < 0 ? 0.62 : 0.38);
+    else if (screenX > WIDTH * 0.45) target = center - WIDTH * 0.45;
+    else if (screenX < WIDTH * 0.3) target = center - WIDTH * 0.3;
+    this.camera += (target - this.camera) * 0.12;
+    if (this.player.x <= 0) this.camera = 0;
+    if (this.player.x >= this.level.width - this.player.w) this.camera = this.level.width - WIDTH;
     this.camera = clamp(this.camera, 0, Math.max(0, this.level.width - WIDTH));
+  }
+
+  emit(type, x = this.player.x + this.player.w / 2, y = this.player.y + this.player.h) {
+    this.effects.push({ type, x, y, time: this.time });
+    this.onEvent(type);
+  }
+
+  detectCollectibles(progress) {
+    for (const item of this.level.collectibles || []) {
+      if (this.collected.has(item.id) || progress.collected?.includes(item.id)) continue;
+      if (item.requiresQuestion && !progress.solved?.includes(item.requiresQuestion)) continue;
+      if (this.level.gates.some(gate => gate.x < item.x && !progress.solved?.includes(gate.questionId))) continue;
+      const player = this.player;
+      if (item.x < player.x - 10 || item.x > player.x + player.w + 10
+        || item.y < player.y - 10 || item.y > player.y + player.h + 10) continue;
+      this.collected.add(item.id);
+      this.emit(item.secret ? 'secret' : 'coin', item.x, item.y);
+      this.onCollect(item);
+    }
   }
 
   solids(progress) {
@@ -120,6 +150,7 @@ export class GameEngine {
       this.lastNotifiedCheckpoint = checkpoint.id;
     } else if (checkpoint.id !== this.lastNotifiedCheckpoint) {
       this.lastNotifiedCheckpoint = checkpoint.id;
+      this.emit('checkpoint', checkpoint.x, checkpoint.y);
       this.onCheckpoint(checkpoint.id);
     }
   }
@@ -166,8 +197,17 @@ export class GameEngine {
 
   update() {
     const progress = this.getProgress() || {};
+    const wasGrounded = this.player.grounded;
+    const previousVy = this.player.vy;
     const result = stepPlayer(this.player, this.input.sample(), FIXED_STEP,
       this.solids(progress), this.level.height);
+    if (this.player.vy < -200 && (wasGrounded || previousVy >= 0)) this.emit('jump');
+    if (!wasGrounded && this.player.grounded && previousVy > 100) {
+      this.player.landedAt = this.time;
+      this.emit('land');
+    }
+    if (this.player.grounded && Math.abs(this.player.vx) > 180 && Math.floor(this.time * 12) !== Math.floor((this.time + FIXED_STEP) * 12)) this.emit('dust');
+    this.effects = this.effects.filter(effect => this.time - effect.time < 1.2);
     this.player.x = clamp(this.player.x, 0, Math.max(0, this.level.width - this.player.w));
     if (result.fell) {
       // The local checkpoint also works when persistence is asynchronous.
@@ -175,6 +215,7 @@ export class GameEngine {
       this.onFall();
     } else {
       this.detectCheckpoint(progress);
+      this.detectCollectibles(progress);
     }
     this.time += FIXED_STEP;
     this.updateCamera();
@@ -198,7 +239,7 @@ export class GameEngine {
     }
     const frame = {
       ctx: this.ctx, canvas: this.canvas, level: this.level, player: this.player,
-      camera: this.camera, time: this.time, progress: this.getProgress() || {},
+      camera: this.camera, time: this.time, progress: this.getProgress() || {}, effects: this.effects,
     };
     this.onFrame(frame);
     this.draw(frame);

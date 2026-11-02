@@ -1,8 +1,19 @@
 import { questions } from './data/questions.js';
 import { levels, levelForQuestion, phaseFor } from './data/levels.js';
 
-export const freshState = () => ({ version: 1, contentVersion: 1, level: 0, phase: 'journey', checkpoint: 'start', solved: [], attempts: {}, keys: [], won: false });
+export const freshState = () => ({ version: 1, contentVersion: 1, level: 0, phase: 'journey', checkpoint: 'start', solved: [], attempts: {}, keys: [], collected: [], won: false });
 export const score = state => state.solved.length * 10;
+
+export function collectItem(state, id) {
+  const level = levels[state.level];
+  const item = level.collectibles?.find(coin => coin.id === id);
+  if (!item || (item.requiresQuestion && !state.solved.includes(item.requiresQuestion))
+    || level.gates.some(gate => gate.x < item.x && !state.solved.includes(gate.questionId))) return false;
+  state.collected ||= [];
+  if (state.collected.includes(id)) return false;
+  state.collected.push(id);
+  return true;
+}
 export const levelQuestions = level => questions.filter(q => levels[level]?.questionIds.includes(q.id));
 export const levelComplete = state => levelQuestions(state.level).every(q => state.solved.includes(q.id));
 export function completeQuestion(state, id) {
@@ -60,5 +71,16 @@ export function validateState(data) {
   const checkpointGate = current.gates.filter(g => g.x < checkpoint.x);
   if (checkpointGate.some(g => !data.solved.includes(g.questionId))) return null;
   if (data.won && (data.level !== 2 || data.solved.length !== questions.length || data.keys.length !== 3)) return null;
-  return { version: 1, contentVersion: 1, level: data.level, phase, checkpoint: data.checkpoint, solved: [...data.solved], attempts: { ...data.attempts }, keys: [...data.keys], won: data.won };
+  // Additive v1 extension: older saves have no collectibles and retain all learning progress.
+  const collected = data.collected === undefined ? [] : data.collected;
+  if (!Array.isArray(collected) || new Set(collected).size !== collected.length) return null;
+  for (const id of collected) {
+    const owner = levels.findIndex(level => level.collectibles?.some(item => item.id === id));
+    if (owner < 0 || owner > data.level) return null;
+    const level = levels[owner];
+    const item = level.collectibles.find(coin => coin.id === id);
+    if ((item.requiresQuestion && !data.solved.includes(item.requiresQuestion))
+      || level.gates.some(gate => gate.x < item.x && !data.solved.includes(gate.questionId))) return null;
+  }
+  return { version: 1, contentVersion: 1, level: data.level, phase, checkpoint: data.checkpoint, solved: [...data.solved], attempts: { ...data.attempts }, keys: [...data.keys], collected: [...collected], won: data.won };
 }
