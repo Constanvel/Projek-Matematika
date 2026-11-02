@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "authoring": "Original procedural pixel art. No resampling of original assets.",
+  "identity": "Gundul: bald head, warm skin, black armour, silver brooch, oxblood cape, boots.",
+  "cell": [
+    32,
+    48
+  ],
+  "sheet": [
+    192,
+    336
+  ],
+  "palette": {
+    "ink": "#141521",
+    "armour": "#292936",
+    "steel": "#505261",
+    "silver": "#b8bdc7",
+    "shine": "#eee6cf",
+    "skin": "#e9a078",
+    "skinLight": "#ffc49a",
+    "skinShadow": "#b96855",
+    "cape": "#782c40",
+    "capeLight": "#ad4050",
+    "capeDark": "#421e31",
+    "leather": "#684539",
+    "belt": "#aa7651",
+    "eye": "#25202b",
+    "white": "#fff1da"
+  },
+  "animations": {
+    "idle": {
+      "frames": 4,
+      "fps": 3,
+      "row": 0,
+      "anchor": [
+        16,
+        47
+      ]
+    },
+    "walk": {
+      "frames": 6,
+      "fps": 9,
+      "row": 1,
+      "anchor": [
+        16,
+        47
+      ]
+    },
+    "run": {
+      "frames": 6,
+      "fps": 13,
+      "row": 2,
+      "anchor": [
+        16,
+        47
+      ]
+    },
+    "jump": {
+      "frames": 2,
+      "fps": 5,
+      "row": 3,
+      "anchor": [
+        16,
+        47
+      ]
+    },
+    "fall": {
+      "frames": 2,
+      "fps": 5,
+      "row": 4,
+      "anchor": [
+        16,
+        47
+      ]
+    },
+    "land": {
+      "frames": 2,
+      "fps": 12,
+      "row": 5,
+      "anchor": [
+        16,
+        47
+      ]
+    },
+    "victory": {
+      "frames": 4,
+      "fps": 6,
+      "row": 6,
+      "anchor": [
+        16,
+        47
+      ]
+    }
+  }
+}
