@@ -5,6 +5,9 @@ export const MOVE_ACCELERATION = 2400;
 export const MOVE_FRICTION = 2800;
 export const GRAVITY = 2000;
 export const JUMP_SPEED = 720;
+export const SPRING_JUMP_SPEED = 840;
+export const ICE_FRICTION = 500;
+export const ICE_ACCELERATION = 1200;
 export const MAX_FALL_SPEED = 1100;
 export const COYOTE_TIME = 0.1;
 export const JUMP_BUFFER_TIME = 0.12;
@@ -12,7 +15,8 @@ export const FIXED_STEP = 1 / 60;
 
 export const constants = Object.freeze({
   PLAYER_WIDTH, PLAYER_HEIGHT, MOVE_SPEED, MOVE_ACCELERATION, MOVE_FRICTION,
-  GRAVITY, JUMP_SPEED, MAX_FALL_SPEED, COYOTE_TIME, JUMP_BUFFER_TIME, FIXED_STEP,
+  GRAVITY, JUMP_SPEED, SPRING_JUMP_SPEED, ICE_FRICTION, ICE_ACCELERATION,
+  MAX_FALL_SPEED, COYOTE_TIME, JUMP_BUFFER_TIME, FIXED_STEP,
 });
 
 export function createPlayer(spawn = { x: 0, y: 0 }) {
@@ -20,6 +24,7 @@ export function createPlayer(spawn = { x: 0, y: 0 }) {
     x: spawn.x, y: spawn.y, w: PLAYER_WIDTH, h: PLAYER_HEIGHT,
     vx: 0, vy: 0, grounded: false, facing: 1,
     coyoteTime: 0, jumpBufferTime: 0, jumpCutApplied: false,
+    groundPlatform: null, landedPlatform: null, jumpSurface: null,
   };
 }
 
@@ -27,8 +32,9 @@ const overlaps = (a, sizeA, b, sizeB) => a < b + sizeB && a + sizeA > b;
 const approach = (value, target, amount) => value < target
   ? Math.min(value + amount, target) : Math.max(value - amount, target);
 
-function jump(player) {
-  player.vy = -JUMP_SPEED;
+function jump(player, platform) {
+  player.jumpSurface = platform?.surface || null;
+  player.vy = platform?.surface === 'spring' ? -SPRING_JUMP_SPEED : -JUMP_SPEED;
   player.grounded = false;
   player.coyoteTime = 0;
   player.jumpBufferTime = 0;
@@ -39,17 +45,25 @@ function jump(player) {
 export function stepPlayer(player, input = {}, dt = FIXED_STEP, solids = [], worldHeight = Infinity) {
   if (!Number.isFinite(dt) || dt <= 0) return { fell: player.y > worldHeight };
 
+  const groundPlatform = player.grounded ? solids.find(solid =>
+    overlaps(player.x, player.w, solid.x, solid.w)
+    && Math.abs(player.y + player.h - solid.y) < 0.001) : null;
+  player.landedPlatform = null;
+  player.jumpSurface = null;
+
   player.coyoteTime = player.grounded
     ? COYOTE_TIME : Math.max(0, (player.coyoteTime || 0) - dt);
   player.jumpBufferTime = input.jumpPressed
     ? JUMP_BUFFER_TIME : Math.max(0, (player.jumpBufferTime || 0) - dt);
 
   const axis = Math.max(-1, Math.min(1, Number(input.axis) || 0));
+  const acceleration = groundPlatform?.surface === 'ice' ? ICE_ACCELERATION : MOVE_ACCELERATION;
+  const friction = groundPlatform?.surface === 'ice' ? ICE_FRICTION : MOVE_FRICTION;
   player.vx = approach(player.vx, axis * MOVE_SPEED,
-    (axis ? MOVE_ACCELERATION : MOVE_FRICTION) * dt);
+    (axis ? acceleration : friction) * dt);
   if (axis) player.facing = Math.sign(axis);
 
-  if (player.jumpBufferTime > 0 && player.coyoteTime > 0) jump(player);
+  if (player.jumpBufferTime > 0 && player.coyoteTime > 0) jump(player, groundPlatform);
   if (!input.jumpHeld && player.vy < 0 && !player.jumpCutApplied) {
     player.vy *= 0.45;
     player.jumpCutApplied = true;
@@ -74,6 +88,7 @@ export function stepPlayer(player, input = {}, dt = FIXED_STEP, solids = [], wor
   for (const solid of solids) {
     if (!overlaps(player.x, player.w, solid.x, solid.w)) continue;
     if (player.vy >= 0 && player.y + player.h <= solid.y && nextY + player.h >= solid.y) {
+      if (solid.y - player.h <= nextY) player.landedPlatform = solid;
       nextY = Math.min(nextY, solid.y - player.h);
       landed = true;
     } else if (player.vy < 0 && player.y >= solid.y + solid.h && nextY <= solid.y + solid.h) {
@@ -83,12 +98,14 @@ export function stepPlayer(player, input = {}, dt = FIXED_STEP, solids = [], wor
   }
   player.y = nextY;
   player.grounded = landed;
+  player.groundPlatform = landed ? player.landedPlatform : null;
   if (landed || hitCeiling) player.vy = 0;
   if (landed) {
     player.coyoteTime = COYOTE_TIME;
     // A press shortly before landing is consumed immediately, not one frame later.
     if (player.jumpBufferTime > 0) {
-      jump(player);
+      jump(player, player.landedPlatform);
+      player.groundPlatform = null;
       if (!input.jumpHeld) {
         player.vy *= 0.45;
         player.jumpCutApplied = true;

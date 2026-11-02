@@ -4,6 +4,8 @@ import { solidsFor } from '../data/levels.js';
 
 const WIDTH = 960;
 const HEIGHT = 540;
+export const CRUMBLE_DELAY = 0.7;
+export const CRUMBLE_RESPAWN_DELAY = 2.5;
 const noop = () => {};
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const distanceToInterval = (value, min, max) => Math.max(min - value, 0, value - max);
@@ -83,6 +85,7 @@ export class GameEngine {
       && (!cp.requiresQuestion || progress.solved?.includes(cp.requiresQuestion)));
     this.checkpointId = checkpoint?.id ?? null;
     this.player = createPlayer(checkpoint || this.level.spawn);
+    this.surfaceTimers = new Map();
     this.input.clear();
     this.camera = clamp(this.player.x + this.player.w / 2 - WIDTH * 0.4, 0, Math.max(0, this.level.width - WIDTH));
   }
@@ -132,7 +135,38 @@ export class GameEngine {
   }
 
   solids(progress) {
-    return solidsFor(this.level, { solved: progress.solved || [], keys: progress.keys || [] });
+    return solidsFor(this.level, { solved: progress.solved || [], keys: progress.keys || [] })
+      .filter(platform => this.surfaceTimers.get(platform)?.state !== 'gone');
+  }
+
+  updateSurfaces(now) {
+    const contact = this.player.landedPlatform;
+    if (contact?.surface === 'crumble' && !this.surfaceTimers.has(contact)) {
+      this.surfaceTimers.set(contact, { state: 'cracking', deadline: now + CRUMBLE_DELAY });
+    }
+    for (const [platform, timer] of this.surfaceTimers) {
+      if (now + 1e-9 < timer.deadline) continue;
+      if (timer.state === 'cracking') {
+        timer.state = 'gone';
+        timer.deadline += CRUMBLE_RESPAWN_DELAY;
+      } else {
+        const player = this.player;
+        const overlapping = player.x < platform.x + platform.w && player.x + player.w > platform.x
+          && player.y < platform.y + platform.h && player.y + player.h > platform.y;
+        if (!overlapping) this.surfaceTimers.delete(platform);
+      }
+    }
+  }
+
+  get surfaceStates() {
+    return (this.level.platforms || []).filter(platform => platform.surface).map(platform => {
+      const timer = this.surfaceTimers.get(platform);
+      return {
+        platform, x: platform.x, y: platform.y, w: platform.w, h: platform.h,
+        surface: platform.surface, state: timer?.state || 'intact',
+        remaining: timer && timer.deadline - this.time > 1e-9 ? timer.deadline - this.time : 0,
+      };
+    });
   }
 
   detectCheckpoint(progress) {
@@ -196,11 +230,14 @@ export class GameEngine {
   }
 
   update() {
+    if (this.paused) return;
     const progress = this.getProgress() || {};
     const wasGrounded = this.player.grounded;
     const previousVy = this.player.vy;
     const result = stepPlayer(this.player, this.input.sample(), FIXED_STEP,
       this.solids(progress), this.level.height);
+    this.updateSurfaces(this.time + FIXED_STEP);
+    if (this.player.jumpSurface === 'spring') this.emit('spring');
     if (this.player.vy < -200 && (wasGrounded || previousVy >= 0)) this.emit('jump');
     if (!wasGrounded && this.player.grounded && previousVy > 100) {
       this.player.landedAt = this.time;
@@ -240,6 +277,7 @@ export class GameEngine {
     const frame = {
       ctx: this.ctx, canvas: this.canvas, level: this.level, player: this.player,
       camera: this.camera, time: this.time, progress: this.getProgress() || {}, effects: this.effects,
+      surfaceStates: this.surfaceStates,
     };
     this.onFrame(frame);
     this.draw(frame);
