@@ -12,21 +12,27 @@ const gate = (questionId, x, label, effect, bridge) => ({
   id: questionId, questionId, x, y: 0, w: 34, h: 450, label, effect, bridge,
 });
 
+// Parkour jump x is the player's top-left launch threshold while moving right.
+// Hold each jump for 25 fixed steps (~0.42 s); landX identifies the next solid's left edge.
+// Poll thresholds every <= 50 ms (15 px at full speed), and only trigger while grounded.
 export const levels = [
   {
     id: 'forest', name: 'Hutan Fungsi', subtitle: 'Langkah kecil. Keberanian besar.',
     lesson: 'Masukkan nilai x ke fungsi, lalu hitung dengan teliti.', theme: 'forest',
     width: 3400, height: 660, spawn: { x: 80, y: 380 },
-    // The original floor and machine bridges stay intact; roots are short, safe jumps.
-    platforms: [ground(0, 830), ground(980, 870), ground(2010, 1390),
+    // Keep machine bridges and saved restart floors; the middle span now requires two jumps.
+    parkour: [{ id: 'forest-roots', start: 1180, end: 1640, requiresQuestion: 'q1',
+      checkpointId: 'parkour-roots', gap: { start: 1250, end: 1600 },
+      jumps: [{ x: 1205, landX: 1360 }, { x: 1425, landX: 1600 }] }],
+    platforms: [ground(0, 830), ground(980, 270), ground(1600, 250), ground(2010, 1390),
       ground(240, 64, 418), ground(320, 48, 402), ledge(390, 340, 140),
       ...alcove(590, 260, 144),
-      ground(1170, 72, 418), ledge(1300, 340, 144), ledge(1510, 260, 144),
+      ledge(1360, 370, 100),
       ground(2220, 80, 410), ledge(2360, 330, 144), ledge(2570, 250, 144),
       ground(2990, 80, 418)],
     collectibles: coins('forest', [
       [220, 400], [280, 364], [452, 310], [634, 230], [686, 230, null, true],
-      [1040, 410, 'q1'], [1204, 382, 'q1'], [1360, 310, 'q1'], [1574, 230, 'q1'],
+      [1040, 410, 'q1'], [1220, 410, 'q1'], [1415, 340, 'q1'], [1620, 410, 'q1'],
       [2070, 410, 'q2'], [2260, 374, 'q2'], [2424, 300, 'q2'], [2630, 220, 'q2'],
       [3028, 382, 'q3'], [3150, 410, 'q3'],
     ]),
@@ -43,16 +49,18 @@ export const levels = [
     id: 'cave', name: 'Gua Komposisi', subtitle: 'Dua mesin. Satu urutan yang tepat.',
     lesson: '(f ∘ g)(x): kerjakan g terlebih dahulu, kemudian masukkan hasilnya ke f.', theme: 'cave',
     width: 3700, height: 660, spawn: { x: 80, y: 380 },
-    platforms: [ground(0, 940), ground(1110, 1060), ground(2320, 1380),
-      ground(280, 64, 410), ledge(400, 330, 144), ledge(610, 250, 144),
-      ground(1330, 72, 402), ledge(1470, 322, 144),
-      ...alcove(1680, 250, 160), ledge(1900, 340, 128),
+    parkour: [{ id: 'cave-crystals', start: 1300, end: 1960, requiresQuestion: 'q4',
+      checkpointId: 'parkour-crystals', gap: { start: 1370, end: 1920 },
+      jumps: [{ x: 1325, landX: 1460 }, { x: 1515, landX: 1680 }, { x: 1715, landX: 1920 }] }],
+    platforms: [ground(0, 940), ground(1110, 260), ground(1920, 250), ground(2320, 1380),
+      ground(280, 64, 410), ledge(400, 330, 144), ...alcove(610, 250, 160),
+      ledge(1460, 370, 110), ledge(1680, 330, 90),
       ground(2540, 72, 418), ground(2630, 56, 402),
       ledge(2740, 322, 144), ledge(2940, 242, 144), ground(3310, 80, 410)],
     collectibles: coins('cave', [
       [240, 402], [310, 374], [464, 300], [674, 220],
-      [1170, 410, 'q4'], [1364, 366, 'q4'], [1534, 292, 'q4'],
-      [1724, 212, 'q4'], [1790, 212, 'q4', true], [1956, 310, 'q4'],
+      [1170, 410, 'q4'], [1340, 410, 'q4'], [1510, 340, 'q4'],
+      [1730, 300, 'q4'], [720, 220, null, true], [1930, 410, 'q4'],
       [2380, 410, 'q5'], [2572, 382, 'q5'], [2660, 366, 'q5'],
       [2804, 292, 'q5'], [3004, 212, 'q5'], [3350, 374, 'q6'], [3450, 410, 'q6'],
     ]),
@@ -69,9 +77,12 @@ export const levels = [
     id: 'castle', name: 'Kastel Matematika', subtitle: 'Pulihkan mesin. Buka harta pengetahuan.',
     lesson: 'Substitusikan seluruh bentuk fungsi. Gunakan tanda kurung saat menguadratkan.', theme: 'castle',
     width: 5700, height: 660, spawn: { x: 80, y: 380 },
-    platforms: [ground(0, 920), ground(1080, 950), ground(2190, 3510),
+    parkour: [{ id: 'castle-battlements', start: 1250, end: 1880, requiresQuestion: 'q7',
+      checkpointId: 'parkour-battlements', gap: { start: 1330, end: 1830 },
+      jumps: [{ x: 1285, landX: 1420 }, { x: 1475, landX: 1660 }, { x: 1690, landX: 1830 }] }],
+    platforms: [ground(0, 920), ground(1080, 250), ground(1830, 200), ground(2190, 3510),
       ground(270, 64, 418), ground(350, 64, 402), ledge(460, 322, 144), ledge(660, 242, 128),
-      ground(1320, 72, 410), ledge(1450, 330, 144), ledge(1650, 250, 144),
+      ledge(1420, 370, 100), ledge(1660, 410, 70),
       ground(2420, 72, 402), ledge(2550, 322, 144), ledge(2750, 242, 128),
       ground(3280, 72, 418), ledge(3410, 338, 144),
       ground(3880, 72, 410), ledge(4010, 330, 144),
@@ -79,7 +90,7 @@ export const levels = [
       ground(5210, 64, 418), ledge(5320, 338, 144), ...alcove(5510, 258, 144)],
     collectibles: coins('castle', [
       [230, 402], [300, 382], [382, 366], [524, 292], [716, 212],
-      [1130, 410, 'q7'], [1354, 374, 'q7'], [1514, 300, 'q7'], [1714, 220, 'q7'],
+      [1130, 410, 'q7'], [1310, 410, 'q7'], [1480, 340, 'q7'], [1680, 380, 'q7'],
       [2240, 410, 'q8'], [2454, 366, 'q8'], [2614, 292, 'q8'], [2806, 212, 'q8'],
       [3320, 382, 'q9'], [3474, 308, 'q9'],
       [3914, 374, 'q10'], [4074, 300, 'q10'],
@@ -105,6 +116,10 @@ export const levels = [
 
 // A solved terminal is also a safe restart point, before its newly opened barrier.
 for (const level of levels) {
+  for (const route of level.parkour) {
+    level.checkpoints.push({ id: route.checkpointId, x: route.start, y: 380, requiresQuestion: route.requiresQuestion });
+    level.signs.push({ x: route.start, text: 'Simpan langkah · lompat mengikuti koin' });
+  }
   for (const gate of level.gates) {
     gate.checkpointId = `machine-${gate.questionId}`;
     level.checkpoints.push({ id: gate.checkpointId, x: gate.x - 120, y: 380, requiresQuestion: gate.questionId });

@@ -12,24 +12,41 @@ async function travelUntil(page, text) {
   await expect(page.locator('#modal')).toBeHidden();
   await expect(page.locator('#board')).toHaveAttribute('data-paused', 'false');
   await page.locator('#board').focus();
-  await page.keyboard.up('KeyD');
-  await page.keyboard.down('KeyD');
-  let lastX = -1;
-  for (let i = 0; i < 140; i++) {
-    if ((await page.locator('#interaction').textContent()).includes(text)) {
-      await page.keyboard.up('KeyD'); return;
-    }
-    const x = Number(await page.locator('#board').getAttribute('data-player-x'));
-    if (x === lastX) {
-      await page.keyboard.down('Space');
-      await page.waitForTimeout(420);
-      await page.keyboard.up('Space');
-    }
-    lastX = x;
-    await page.waitForTimeout(120);
-  }
-  await page.keyboard.up('KeyD');
-  throw new Error(`Tidak mencapai ${text}`);
+  // Drive the public keyboard controls at animation-frame precision. Parkour needs
+  // intentional takeoff before a gap; a bot that only jumps into walls cannot pass.
+  await page.evaluate(async targetText => {
+    const { levels } = await import('/js/data/levels.js');
+    const title = document.getElementById('level-title').textContent;
+    const level = levels.find(item => item.name === title);
+    const board = document.getElementById('board');
+    const key = (type, code) => window.dispatchEvent(new KeyboardEvent(type, { code, bubbles: true, cancelable: true }));
+    key('keyup', 'KeyD'); key('keydown', 'KeyD');
+    const started = performance.now();
+    let lastX = -1, stalled = 0, jumpUntil = 0;
+    await new Promise((resolve, reject) => {
+      const tick = now => {
+        if (document.getElementById('interaction').textContent.includes(targetText)) {
+          key('keyup', 'Space'); key('keyup', 'KeyD'); resolve(); return;
+        }
+        if (now - started > 40000) {
+          key('keyup', 'Space'); key('keyup', 'KeyD'); reject(new Error(`Tidak mencapai ${targetText}; x=${board.dataset.playerX}`)); return;
+        }
+        const x = Number(board.dataset.playerX);
+        const grounded = board.dataset.grounded === 'true';
+        stalled = x === lastX ? stalled + 1 : 0;
+        const takeoff = level.parkour?.flatMap(route => route.jumps).some(jump => x >= jump.x - 5 && x <= jump.x + 15);
+        if (now >= jumpUntil) {
+          key('keyup', 'Space');
+          if (grounded && (takeoff || stalled >= 5)) {
+            key('keydown', 'Space'); jumpUntil = now + 420; stalled = 0;
+          }
+        }
+        lastX = x;
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+  }, text);
 }
 async function answer(page, question) {
   await expect(page.locator('#modal')).toBeVisible();
@@ -49,6 +66,7 @@ test('assets, movement, jump, pause, wrong answers, review and reload', async ({
   await start(page);
   await expect(page.locator('#level-title')).toHaveText('Hutan Fungsi');
   await expect(page.locator('#score')).toHaveText('0');
+  await page.screenshot({ path: 'test-results/forest-start.png', fullPage: true });
   await travelUntil(page, 'Jembatan akar');
   await page.keyboard.press('KeyE');
   const stoppedX = await page.locator('#board').getAttribute('data-player-x');
@@ -134,6 +152,7 @@ test('all twelve questions through real level travel, checkpoints and victory', 
   await expect(page.locator('#final-stats')).toContainText('3/3');
   const saved = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), key);
   expect(saved.won).toBe(true); expect(saved.solved).toHaveLength(12);
+  await page.screenshot({ path: 'test-results/victory.png', fullPage: true });
   await page.reload();
   await page.getByRole('button', { name: 'Lanjutkan', exact: true }).click();
   await expect(page.locator('#victory')).toBeVisible();
@@ -145,12 +164,12 @@ test('all twelve questions through real level travel, checkpoints and victory', 
 });
 
 test('asset failure is recoverable without starting a broken session', async ({ page }) => {
-  await page.route('**/processed/*.png', route => route.abort());
+  await page.route('**/pixel/gundul-sheet.png', route => route.abort());
   await page.goto('/');
   await page.getByRole('button', { name: 'Mulai petualangan' }).click();
   await expect(page.locator('#retry')).toBeVisible();
   await expect(page.locator('#loading-text')).toContainText('Aset belum dapat dimuat');
-  await page.unroute('**/processed/*.png');
+  await page.unroute('**/pixel/gundul-sheet.png');
   await page.locator('#retry').click();
   await expect(page.locator('#loading')).toBeHidden();
   await expect(page.locator('#board')).toBeFocused();
@@ -159,7 +178,7 @@ test('asset failure is recoverable without starting a broken session', async ({ 
 test('pause requested during loading survives asset completion', async ({ page }) => {
   let release;
   const blocked = new Promise(resolve => { release = resolve; });
-  await page.route('**/processed/*.png', async route => { await blocked; await route.continue(); });
+  await page.route('**/pixel/gundul-sheet.png', async route => { await blocked; await route.continue(); });
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.getByRole('button', { name: 'Mulai petualangan' }).click();
   await expect(page.locator('#loading')).toBeVisible();
