@@ -8,6 +8,7 @@ import { createRenderer } from './game/renderer.js';
 import { showQuestion } from './ui/questions.js';
 import { GameAudio } from './game/audio.js';
 import { startMenuScene } from './game/menu-scene.js';
+import { loadRun, saveRun, resetRun, takeFall, getLeaderboard, recordVictory } from './game/run-records.js';
 
 const $ = id => document.getElementById(id);
 const audio = new GameAudio();
@@ -16,6 +17,11 @@ let stopScene = startMenuScene($('menu-world'));
 for (const type of ['pointerdown', 'keydown']) document.addEventListener(type, () => audio.start(), { once: true });
 const loaded = load();
 let state = loaded.state;
+let recordStorage;
+try { recordStorage = window.localStorage; } catch { /* Storage can be denied. */ }
+let run = state ? loadRun(recordStorage) : resetRun(recordStorage);
+let measuredEngineTime = 0;
+let lastRunSave = run.elapsed;
 let engine = null;
 let assetsPromise;
 let previousFocus;
@@ -28,6 +34,8 @@ function notice(text) { $('notice').textContent = text; $('notice').hidden = !te
 if (loaded.warning) notice(loaded.warning);
 function persist() {
   if (!state) return;
+  syncRunTime();
+  saveRun(recordStorage, run);
   if (!save(state)) notice('Penyimpanan tidak tersedia. Game tetap berjalan, tetapi progres belum tersimpan.');
   $('continue').disabled = false;
 }
@@ -65,9 +73,23 @@ modal.addEventListener('close', () => {
 $('close-modal').addEventListener('click', closeDialog);
 function home() { launchId++; persist(); engine?.stop(); engine = null; showScreen('home'); $('continue').disabled = !state; $('start').focus(); }
 function newGame() {
-  const begin = () => { state = freshState(); persist(); closeDialog(); enterGame(); };
+  const begin = () => {
+    engine?.stop(); engine = null;
+    state = freshState(); run = resetRun(recordStorage); measuredEngineTime = 0; lastRunSave = 0;
+    persist(); closeDialog(); enterGame();
+  };
   if (state) dialog('Mulai perjalanan baru?', 'Progres Gundul Warrior akan diganti. Tindakan ini tidak dapat dibatalkan. Progres Function Adventure lama tidak diubah.', [button('Ya, mulai baru', begin), button('Batalkan', closeDialog, false)]);
   else begin();
+}
+function syncRunTime() {
+  if (!engine) return;
+  // Engine time advances only through unpaused fixed physics steps.
+  if (!run.completed) run.elapsed += Math.max(0, engine.time - measuredEngineTime);
+  measuredEngineTime = engine.time;
+}
+function formatTime(seconds) {
+  const total = Math.floor(seconds);
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 }
 function updateHud() {
   const level = levels[state.level];
@@ -78,6 +100,9 @@ function updateHud() {
   $('score').textContent = score(state);
   $('keys').textContent = state.keys.length;
   $('coins').textContent = state.collected?.length || 0;
+  $('health').textContent = `${run.health}/${run.maxHealth}`;
+  $('health-status').setAttribute('aria-label', `Health ${run.health} dari ${run.maxHealth}`);
+  $('health-status').dataset.low = String(run.health === 1);
   const solved = levelQuestions(state.level).filter(q => state.solved.includes(q.id)).length;
   $('map-progress').textContent = `${solved} / ${level.questionIds.length} MESIN AKTIF`;
   $('checkpoint-status').textContent = `Checkpoint: ${state.checkpoint === 'start' ? 'awal wilayah' : state.checkpoint}`;
@@ -87,7 +112,9 @@ async function enterGame() {
   if (!state) return;
   if (state.won) { victory(); return; }
   const request = ++launchId;
+  syncRunTime();
   engine?.stop(); engine = null;
+  measuredEngineTime = 0;
   pauseRequested = false;
   lastInteraction = '';
   showScreen('game'); updateHud();
@@ -103,7 +130,15 @@ async function enterGame() {
       canvas: $('board'), level: levels[state.level], getProgress: () => state,
       draw: createRenderer(assets).draw, onInteract: interact,
       onCheckpoint: id => { state.checkpoint = id; persist(); updateHud(); },
-      onFall: () => { audio.play('fall'); lastInteraction = ''; fallNoticeUntil = performance.now() + 2200; $('game').dataset.contextual = 'true'; $('interaction').textContent = 'Tidak apa-apa. Kembali ke checkpoint; skor dan jawabanmu tetap aman.'; },
+      onFall: () => {
+        syncRunTime();
+        const { depleted } = takeFall(run);
+        persist(); updateHud(); audio.play('fall'); lastInteraction = '';
+        fallNoticeUntil = performance.now() + 2200; $('game').dataset.contextual = 'true';
+        $('interaction').textContent = depleted
+          ? 'Health habis. Kembali ke checkpoint dengan health penuh; progres belajar tetap aman.'
+          : `Health -1. Kembali ke checkpoint; skor dan jawabanmu tetap aman. Health ${run.health}/3.`;
+      },
       onFrame: updateInteraction, onPause: pause,
       onCollect: item => { if (collectItem(state, item.id)) { persist(); updateHud(); } },
       onEvent: name => audio.play(name === 'secret' ? 'key' : name === 'spring' ? 'jump' : name),
@@ -121,6 +156,8 @@ async function enterGame() {
   }
 }
 function updateInteraction(frame) {
+  syncRunTime();
+  if (run.elapsed - lastRunSave >= 5) { saveRun(recordStorage, run); lastRunSave = run.elapsed; }
   if (frame) {
     $('board').dataset.playerX = Math.round(frame.player.x);
     $('board').dataset.playerY = Math.round(frame.player.y);
@@ -173,7 +210,7 @@ function interact(item) {
       advanceLevel(state); persist(); victory();
     } else {
       dialog(`${levels[state.level].name} ditaklukkan`, `Kunci ke-${state.level + 1} ditemukan. Skor: ${score(state)}. Selanjutnya: ${levels[state.level + 1].name}.`, [button('Lanjut ke wilayah berikutnya', () => {
-        engine?.stop(); engine = null;
+        syncRunTime(); engine?.stop(); engine = null;
         advanceLevel(state); persist(); closeDialog(); enterGame();
       }), button('Kembali ke menu', () => { closeDialog(); home(); }, false)]);
     }
@@ -189,16 +226,60 @@ function pause() {
 function victory() {
   audio.setPaused(false);
   audio.play('victory');
+  syncRunTime(); run.completed = true; saveRun(recordStorage, run);
   launchId++; engine?.stop(); engine = null; showScreen('victory');
   const firstTry = state.solved.filter(id => state.attempts[id] === 1).length;
   const wrong = Object.values(state.attempts).reduce((a, b) => a + b, 0) - state.solved.length;
-  $('final-stats').replaceChildren(...[[`${score(state)}/120`, 'Skor akhir'], [`${firstTry}/12`, 'Benar percobaan pertama'], [wrong, 'Percobaan salah'], [`${state.keys.length}/3`, 'Kunci ditemukan'], [state.collected?.length || 0, 'Kristal eksplorasi'], ['12/12', 'Mesin dipulihkan']].map(([value, label]) => {
+  $('final-stats').replaceChildren(...[[`${score(state)}/120`, 'Skor akhir'], [`${firstTry}/12`, 'Benar percobaan pertama'], [wrong, 'Percobaan salah'], [`${state.keys.length}/3`, 'Kunci ditemukan'], [state.collected?.length || 0, 'Kristal eksplorasi'], ['12/12', 'Mesin dipulihkan'], [run.falls, 'Jumlah jatuh'], [formatTime(run.elapsed), 'Waktu bermain aktif']].map(([value, label]) => {
     const div = document.createElement('div'); div.className = 'final-stat';
     const strong = document.createElement('b'); strong.textContent = value;
     const span = document.createElement('span'); span.textContent = label; div.append(strong, span); return div;
   }));
+  $('record-result').disabled = run.recorded;
+  $('player-name').disabled = run.recorded;
+  $('record-status').textContent = run.recorded ? 'Hasil perjalanan ini sudah dicatat.' : 'Simpan hasil tamat ke 10 besar perangkat ini.';
   $('replay').focus();
 }
+function leaderboard() {
+  dialog('Leaderboard lokal', '', [button('Tutup', closeDialog)]);
+  const content = $('dialog-content');
+  const note = document.createElement('p'); note.className = 'leaderboard-note';
+  note.textContent = '10 hasil tamat di browser ini. Urutan: skor tertinggi, jatuh tersedikit, lalu waktu aktif tercepat. Tidak tersinkron lintas perangkat.';
+  const entries = getLeaderboard(recordStorage);
+  if (!entries.length) {
+    const empty = document.createElement('p'); empty.textContent = 'Belum ada hasil. Tuntaskan tiga wilayah lalu simpan hasilmu.';
+    content.replaceChildren(note, empty); return;
+  }
+  const table = document.createElement('table'); table.className = 'leaderboard-table';
+  const caption = document.createElement('caption'); caption.textContent = 'Peringkat petualang';
+  const head = table.createTHead().insertRow();
+  for (const title of ['#', 'Nama', 'Skor', 'Jatuh', 'Waktu']) {
+    const th = document.createElement('th'); th.scope = 'col'; th.textContent = title; head.append(th);
+  }
+  const body = table.createTBody();
+  entries.forEach((entry, index) => {
+    const row = body.insertRow();
+    for (const value of [index + 1, entry.name, entry.score, entry.falls, formatTime(entry.elapsed)]) row.insertCell().textContent = value;
+  });
+  table.prepend(caption); content.replaceChildren(note, table);
+}
+$('record-form').addEventListener('submit', event => {
+  event.preventDefault();
+  if (!state?.won || run.recorded) return;
+  let saved = false;
+  const storage = {
+    getItem: key => recordStorage?.getItem(key),
+    setItem: (key, value) => {
+      if (!recordStorage) throw new Error('Storage unavailable');
+      recordStorage.setItem(key, value); saved = true;
+    },
+  };
+  recordVictory(storage, { score: score(state), falls: run.falls, elapsed: run.elapsed, name: $('player-name').value });
+  if (!saved) { $('record-status').textContent = 'Penyimpanan tidak tersedia. Hasil belum tersimpan; coba lagi.'; return; }
+  run.recorded = true; saveRun(recordStorage, run);
+  $('record-result').disabled = true; $('player-name').disabled = true;
+  $('record-status').textContent = 'Hasil tersimpan di leaderboard lokal.';
+});
 function settings() {
   const inGame = !$('game').hidden;
   dialog('Pengaturan audio', '', [button(inGame ? 'Simpan & lanjutkan' : 'Simpan & tutup', closeDialog)]);
@@ -232,6 +313,8 @@ document.addEventListener('fullscreenchange', () => {
     toggle.setAttribute('aria-pressed', String(Boolean(document.fullscreenElement)));
   }
 });
+$('leaderboard').addEventListener('click', leaderboard);
+$('victory-leaderboard').addEventListener('click', leaderboard);
 $('settings').addEventListener('click', settings);
 $('game-settings').addEventListener('click', settings);
 $('start').addEventListener('click', newGame);
@@ -242,7 +325,7 @@ $('retry').addEventListener('click', enterGame);
 $('pause').addEventListener('click', pause);
 $('interact').addEventListener('click', () => { if (!modal.open) interact(); });
 $('victory-menu').addEventListener('click', home);
-$('help').addEventListener('click', () => dialog('Bekal sang petualang', 'Bergerak dengan A/D atau panah kiri/kanan. Lompat dengan Space atau panah atas. Dekati mesin, lalu tekan E atau Interaksi. Pulihkan mesin melalui soal untuk membuka gerbang dan jembatan. Bendera menyimpan checkpoint. Setelah mesin pertama dan kedua tiap wilayah, baca petunjuk dan seberangi rangkaian parkour wajib: tahan lompat untuk menjangkau pijakan, lepaskan lalu tekan lagi setelah mendarat. Jatuh tidak menghapus skor. Saat soal terbuka, dunia berhenti. Komposisi f(g(x)) berarti kerjakan g dahulu, kemudian f. Di ponsel, tahan tombol arah sambil menekan Lompat.', [button('Siap berpetualang', closeDialog)]));
+$('help').addEventListener('click', () => dialog('Bekal sang petualang', 'Bergerak dengan A/D atau panah kiri/kanan. Lompat dengan Space atau panah atas. Dekati mesin, lalu tekan E atau Interaksi. Pulihkan mesin melalui soal untuk membuka gerbang dan jembatan. Bendera menyimpan checkpoint. Setelah mesin pertama dan kedua tiap wilayah, baca petunjuk dan seberangi rangkaian parkour wajib: tahan lompat untuk menjangkau pijakan, lepaskan lalu tekan lagi setelah mendarat. Tiga health tersedia; setiap jatuh mengurangi satu. Saat habis, health pulih di checkpoint tanpa menghapus skor atau jawaban. Leaderboard lokal mencatat skor, jumlah jatuh, dan waktu aktif; waktu berhenti saat jeda atau soal terbuka. Komposisi f(g(x)) berarti kerjakan g dahulu, kemudian f. Di ponsel, tahan tombol arah sambil menekan Lompat.', [button('Siap berpetualang', closeDialog)]));
 $('about').addEventListener('click', () => dialog('Gundul Warrior', 'Petualangan platformer edukasi fungsi dan komposisi fungsi. Tiga wilayah, dua belas tantangan, dan satu petualang pemberani. Karakter pixel baru mempertahankan identitas aset pengguna; sumber asli tetap disimpan. Lingkungan, animasi, musik chiptune, dan efek dibuat secara lokal dengan Canvas serta Web Audio. Tidak ada akun atau pengiriman data pemain. Statistik merupakan catatan latihan, bukan penilaian formal. Navigasi platformer memerlukan penglihatan; soal dan menu menggunakan HTML yang dapat diakses dengan keyboard.', [button('Tutup', closeDialog)]));
 window.addEventListener('pagehide', persist);
 window.addEventListener('blur', () => { audio.setPaused(true); persist(); pause(); });

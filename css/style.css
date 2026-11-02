@@ -234,4 +234,21 @@ main { width: 100%; max-width: none; height: 100dvh; margin: 0; padding: 0; }
   #game .game-bottom { max-width: calc(100% - 240px); left: 70px; bottom: 8px; }
   #game .game-bottom p { font-size: 11px; }
 }
+.health-icon { width: 13px; height: 12px; color: #f18e93; vertical-align: -1px; }
+#health-status[data-low="true"] b { color: #ffacac; }
+#game .hud > div { gap: 11px; }
+.record-form { width: min(460px, 100%); margin: 0 0 18px; text-align: left; }
+.record-form label { display: block; font-size: 12px; color: #dbe4de; margin-bottom: 7px; }
+.record-form > div { display: flex; gap: 8px; }
+.record-form input { flex: 1; min-width: 0; width: 100%; background: #102035; color: #f2eedb; border: 1px solid #79928e; padding: 10px; font: 14px Arial, sans-serif; border-radius: 0; }
+.record-form .button { flex-shrink: 0; }
+#record-status { margin: 8px 0 0; font: 12px/1.5 Arial, sans-serif; color: #c0d1cf; }
+.leaderboard-note { font-size: 13px; line-height: 1.6; }
+.leaderboard-table { width: 100%; border-collapse: collapse; font: 13px/1.5 Arial, sans-serif; font-variant-numeric: tabular-nums; }
+.leaderboard-table caption { text-align: left; color: var(--gold); padding: 12px 0; }
+.leaderboard-table th, .leaderboard-table td { text-align: right; padding: 10px 5px; border-bottom: 1px solid #3c5365; }
+.leaderboard-table th:nth-child(2), .leaderboard-table td:nth-child(2) { text-align: left; max-width: 150px; overflow-wrap: anywhere; }
+.victory { overflow-y: auto; justify-content: flex-start; }
+.victory > :not(.victory-scene) { flex-shrink: 0; }
+@media (max-width: 600px) { .record-form .button { font-size: 8px; padding: 10px; } .leaderboard-table { font-size: 12px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
