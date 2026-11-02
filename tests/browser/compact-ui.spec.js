@@ -6,7 +6,7 @@ test('compact HUD leaves the world clear and bottom help is contextual', async (
   await expect(page.locator('#loading')).toBeHidden();
   await expect(page.locator('#game')).toHaveAttribute('data-contextual', 'true');
   await expect(page.locator('#interaction')).toContainText('A / D');
-  // Move clear of the introductory sign and safe tutorial surfaces.
+  // Move slightly while keeping the introductory context visible.
   await page.keyboard.down('KeyD');
   await expect.poll(async () => Number(await page.locator('#board').getAttribute('data-player-x'))).toBeGreaterThan(150);
   await page.keyboard.up('KeyD');

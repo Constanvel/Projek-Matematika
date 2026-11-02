@@ -32,6 +32,8 @@ test('parkour signs and checkpoint clusters stay readable across all regions', a
         return { hasHint: panels.some(p => p.kind === 'sign' && p.item.x === route.start), collision: panels.some((p, i) => panels.slice(i + 1).some(q => overlaps(p.bounds, q.bounds, LABEL_GAP))), flags: layout.flags.filter(f => Math.abs(f.x - route.start) < 150).length };
       }, { levelId: level.id, routeId: route.id });
       expect(geometry).toEqual({ hasHint: true, collision: false, flags: 1 });
+      // Metadata keeps contextual help; the renderer no longer draws floating blocks.
+      await expect(page.locator('#interaction')).toContainText(route.hint);
       await page.screenshot({ path: `test-results/signage-${route.id}.png`, fullPage: true });
       if (level.id === 'castle' && route === level.parkour.at(-1)) {
         await page.setViewportSize({ width: 390, height: 844 });

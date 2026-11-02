@@ -4,6 +4,8 @@ Platformer edukasi 2D side-scrolling berbahasa Indonesia. Bergerak ke kiri–kan
 
 ## Dokumen produk
 
+[Rencana keterbacaan dan platforming](docs/PLATFORMING-PLAN.md) mencatat referensi desain Mario, tahapan atomic commit, dan kriteria tantangan yang adil. Prinsip yang dipakai adalah pengenalan aman, pengembangan pola, variasi, dan area pemulihan; bukan penyalinan aset atau level.
+
 [PRD Gundul Warrior](docs/PRD.md) menetapkan kebutuhan platformer pixel art layar penuh, materi matematika, kontrol, dan kriteria penerimaan. Nama Function Adventure hanya asal konsep laporan sekolah. Implementasi memakai Canvas rendah 480×270 yang diperbesar nearest-neighbor, karakter pixel turunan orisinal, tiga wilayah, koleksi opsional, serta musik chiptune lokal.
 
 Menu merupakan overlay di atas dunia, bukan halaman promosi. Permainan memenuhi viewport tanpa memotong rasio medan. Pada ponsel portrait, letterbox menjaga seluruh lebar kamera terlihat dan menyediakan ruang kontrol. Tombol **Layar penuh** menyembunyikan antarmuka browser jika Fullscreen API diizinkan; jika tidak, game tetap mengisi viewport.
@@ -41,7 +43,24 @@ Bendera menyimpan checkpoint. Menyelesaikan mesin juga langsung menyimpan titik 
 | Kastel Matematika | q7–q9 | Komposisi kuadrat dan aljabar |
 | Ruang harta di dalam kastel | q10–q12 | Tantangan gabungan |
 
-Tiga wilayah memakai geometri berbeda. Setiap wilayah memiliki parkour wajib di atas lantai yang terputus: dua lompatan berurutan di hutan, tiga di gua, dan tiga dengan variasi ketinggian di kastel. Bendera sebelum rangkaian menyimpan titik aman. Berjalan lurus atau melewatkan salah satu lompatan tidak dapat menyeberang; pijakan disesuaikan dengan physics sebenarnya. Jalur atas dan tiga kantong rahasia tetap opsional, dengan total 55 koin terpisah dari skor matematika.
+Tiga wilayah memakai geometri dan mekanik permukaan berbeda: akar pegas hutan memperkuat lompatan manual, es gua mengurangi pengereman, dan batu retak kastel runtuh 0,7 detik setelah diinjak lalu pulih setelah 2,5 detik. Gimmick diajarkan di atas lantai aman sebelum bagian lanjut. Rangkaian wajib dipisahkan area istirahat dan checkpoint; lantai terputus memerlukan lompatan yang disengaja, bukan berjalan lurus. Jalur rahasia tetap opsional, dengan total 55 koin terpisah dari skor matematika.
+
+| Wilayah | Lebar dunia lama → baru | Rangkaian wajib | Total lompatan wajib |
+| --- | --- | --- | --- |
+| Hutan | 3.400 → 5.500 | 4 | 12 |
+| Gua | 3.700 → 6.300 | 4 | 16 |
+| Kastel | 5.700 → 8.900 | 7 | 24 |
+
+Kastel mendapat tiga rangkaian tengah baru: kubah naik, menara inti tinggi, dan langkah rendah; masing-masing dua lompatan wajib dengan pulau istirahat sebelum mesin. Bagian akhir hutan memakai dua rangkaian empat lompatan; gua dua rangkaian lima lompatan; kastel dua rangkaian enam lompatan dengan batu runtuh. Ketinggian, jarak, dan ukuran pendaratan bervariasi. Checkpoint lama dan urutan gerbang tetap; exit berpindah ke ujung perluasan.
+
+Panel alur fungsi besar tidak lagi menutupi medan; detail berada dalam dialog yang menjeda dunia. Blok tanda tanya dan panel melayang di atas jalur dihapus; teks petunjuk tetap kontekstual dengan ukuran CSS, sehingga tidak membesar mengikuti Canvas. Bendera rapat dikelompokkan secara visual tanpa menghapus posisi checkpoint save. HUD kecil tetap menampilkan health, skor, koin, serta kunci; petunjuk bawah hanya tampil saat relevan. Background bawah kini diisi scenery kedalaman sesuai tema sampai tepi layar, tanpa bidang polos atau efek titik hitam menimpa medan. Siluet pohon, gunung, gua, dan dinding kastel berlanjut melewati viewport; detail akar, batu, retakan, serta fondasi dimulai di belakang lantai sehingga tidak meninggalkan garis putus atau pita warna kosong di jurang.
+
+### Health dan leaderboard lokal
+
+- Mulai dengan 3 health; jatuh mengurangi satu. Health habis memulihkan 3 health pada checkpoint, tanpa menghapus jawaban, skor, kunci, atau koin. Jawaban salah tidak mengurangi health.
+- Health, jumlah jatuh, serta waktu bermain aktif tersimpan terpisah dari progres belajar. Waktu tidak berjalan di menu, loading, dialog, atau jeda. Petualangan baru mereset run, bukan leaderboard.
+- Setelah tamat, masukkan nama opsional dan simpan hasil satu kali. Leaderboard menampilkan 10 hasil lokal: skor tertinggi, jatuh tersedikit, lalu waktu aktif tercepat. Tersedia dari menu dan layar kemenangan.
+- Tidak ada backend, akun, sinkronisasi lintas perangkat, atau perlindungan manipulasi skor lokal. Jika penyimpanan browser diblokir, gameplay tetap berjalan dan penyimpanan hasil menampilkan kegagalan.
 
 Tiga soal utama tiap wilayah menghasilkan satu kunci. Tiga kunci membuka ruang harta kastel. Selesaikan 12 soal, lalu berinteraksi dengan peti terakhir untuk menang. Skor maksimal 120.
 
@@ -55,6 +74,8 @@ js/game/engine.js              Fixed-step loop, kamera, checkpoint
 js/game/physics.js             Gerak, gravitasi, swept AABB
 js/game/input.js               Keyboard dan multi-pointer
 js/game/renderer.js            Tile pixel, lingkungan, gerbang, partikel
+js/game/world-labels.js        Metadata petunjuk dan pengelompokan bendera
+js/game/run-records.js         Health, run aktif, dan leaderboard lokal terpisah
 js/game/pixel-character.js     Sprite pixel turunan dan tujuh jenis animasi
 js/game/menu-scene.js          Pemandangan menu/kemenangan
 js/game/audio.js               Musik chiptune dan efek Web Audio orisinal

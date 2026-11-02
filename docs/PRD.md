@@ -78,7 +78,7 @@ Satu sesi penuh ditargetkan sekitar 15–25 menit. Durasi ini merupakan hipotesi
 
 Total: **12 soal, 3 kunci, skor maksimal 120**. Final bukan wilayah keempat yang terpisah. Setiap level memiliki geometri berbeda, bukan hanya pergantian warna. Tidak ada jalur lompatan yang dapat melewati gerbang wajib tanpa menjawab soal.
 
-Setiap wilayah memiliki rangkaian parkour wajib: hutan dua lompatan di atas celah 350 piksel, gua tiga lompatan di atas celah 550 piksel dengan kenaikan pijakan, dan kastel tiga lompatan di atas celah 500 piksel dengan pendaratan naik–turun. Angka celah adalah panjang rangkaian yang memiliki pijakan antara, bukan jarak satu lompatan. Checkpoint berada sebelum rangkaian. Berjalan lurus atau melewatkan salah satu lompatan tidak boleh menyelesaikannya. Metadata `parkour` memudahkan pengujian; kontrol tidak melakukan auto-jump untuk pemain.
+Setiap wilayah memiliki beberapa rangkaian parkour wajib, area istirahat, dan checkpoint sebelum celah. Bagian akhir diperpanjang setelah mesin terakhir agar tantangan tidak berhenti pada dua atau tiga lompatan. Hutan mengembangkan akar pegas untuk lompatan manual lebih tinggi, gua memakai es dengan momentum pengereman, dan kastel memakai batu retak dengan peringatan sebelum runtuh lalu pulih. Gimmick diperkenalkan di atas lantai aman. Geometri dan metadata akhir berada di `js/data/levels.js`; [rencana pengembangan](PLATFORMING-PLAN.md) mencatat referensi dan verifikasinya. Berjalan lurus atau melewatkan satu lompatan tidak boleh menyelesaikan rangkaian. Kontrol tidak melakukan auto-jump untuk pemain.
 
 ## 6. Kebutuhan gameplay
 
@@ -156,7 +156,15 @@ Palet dasar: biru tua untuk panel, hijau untuk hutan, emas untuk hadiah, putih t
 
 Aset karakter sumber berasal dari gambar pengguna dengan pose terbatas. Runtime memakai sprite pixel orisinal yang mempertahankan kepala gundul, zirah gelap, bros perak, jubah merah, dan sepatu berat. Animasi ditulis terpisah untuk idle, walk, run, jump, fall, land, dan victory; bukan sekadar tujuh pose sumber. Adaptasi menjaga sumber asli dan hak penggunaan; jangan menimpa aset asli secara destruktif.
 
+### Health dan catatan hasil
+
+Tiga health tersedia per siklus; jatuh mengurangi satu, sedangkan jawaban salah tidak mengurangi health. Saat health habis, pemain kembali ke checkpoint dengan tiga health; jawaban, skor, kunci, dan koleksi tetap aman. Run menyimpan health, jumlah jatuh, serta waktu aktif dalam namespace terpisah `gundul-warrior-run-v1`. Waktu berasal dari langkah physics aktif, tidak termasuk menu/loading/dialog/jeda. Petualangan baru mereset run.
+
+Leaderboard lokal `gundul-warrior-leaderboard-v1` menyimpan 10 hasil tamat dengan nama opsional maksimal 20 karakter. Urutan: skor menurun, jatuh menaik, waktu aktif menaik. Penyimpanan dipicu pemain pada layar kemenangan, satu kali per run; menu dan layar kemenangan menyediakan akses daftar. Data tidak dikirim ke server dan tidak tersinkron lintas perangkat. Kegagalan penyimpanan tidak memblokir gameplay; form menampilkan pesan kegagalan. Save belajar lama tetap dapat dimuat dengan health penuh.
+
 ## 9. Layar dan antarmuka
+
+Saat bermain, jalur dan pendaratan lebih penting daripada panel informasi. Alur fungsi lengkap berada pada dialog, bukan panel besar di dunia. Blok tanda tanya dan panel melayang di atas jalur dihapus. Teks petunjuk tetap kontekstual CSS 12px; teks tidak ikut membesar dengan skala Canvas. HUD ringkas mempertahankan skor/kunci/koin. Petunjuk bawah tidak tampil di area tanpa konteks. Bendera berdekatan digabung secara visual tetapi ID dan posisi checkpoint lama tetap sah.
 
 1. **Menu utama:** judul, Mulai, Lanjutkan jika save valid, Petunjuk, dan Tentang Game.
 2. **Area permainan:** Canvas, HUD skor/kunci/wilayah, progres soal, tombol jeda, serta kontrol sentuh bila diperlukan.
@@ -234,11 +242,11 @@ Urutan 3–7 merupakan rencana, bukan pekerjaan yang sudah dilaksanakan. Tambahk
 
 | Risiko | Mitigasi |
 | --- | --- |
-| Platforming mengalahkan fokus belajar | Jalur mudah, checkpoint dekat mesin, tanpa timer soal atau nyawa. |
+| Platforming mengalahkan fokus belajar | Pengenalan aman, checkpoint dekat rangkaian, tanpa timer soal; health habis tidak menghapus belajar. |
 | Materi/validator salah | Pemeriksaan guru, jawaban eksplisit, unit test setiap soal. |
 | Pixel art tidak konsisten dengan aset lama | Audit aset, buat turunan terpisah, tetapkan grid dan anchor; simpan sumber asli. |
 | Perubahan render merusak lompatan/collision | Pisahkan koordinat simulasi dan render; jalankan tes physics dan perjalanan penuh. |
 | Rebranding menghapus progres | Jangan ubah namespace otomatis; siapkan migrasi berversi jika disetujui. |
 | Kesulitan berbeda antar siswa | Materi bertahap, petunjuk, pembahasan, dan percobaan tanpa penalti. |
 
-Musik chiptune orisinal tiga wilayah dan efek suara lokal termasuk lingkup saat ini, dengan mute/volume terpisah dari save belajar dan aktivasi setelah interaksi pengguna. Setelah versi ini stabil: mode latihan, karakter tambahan, wilayah baru, ringkasan kesalahan belajar, dan pengujian offline cache. Leaderboard daring, nyawa, atau batas waktu memerlukan evaluasi tujuan belajar dan spesifikasi terpisah sebelum ditambahkan.
+Musik chiptune orisinal tiga wilayah dan efek suara lokal termasuk lingkup saat ini, dengan mute/volume terpisah dari save belajar dan aktivasi setelah interaksi pengguna. Setelah versi ini stabil: mode latihan, karakter tambahan, wilayah baru, ringkasan kesalahan belajar, dan pengujian offline cache. Health pemulihan dan leaderboard lokal termasuk lingkup saat ini. Leaderboard daring, game over permanen, atau batas waktu memerlukan evaluasi tujuan belajar dan spesifikasi terpisah sebelum ditambahkan.
