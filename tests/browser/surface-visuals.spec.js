@@ -30,6 +30,21 @@ test('regional surfaces render distinct cues and clean pit depth', async ({ page
     }
     return samples;
   });
+  const signPixels = await page.evaluate(async () => {
+    const { levels } = await import('/js/data/levels.js');
+    const { createRenderer } = await import('/js/game/renderer.js');
+    const { createPlayer } = await import('/js/game/physics.js');
+    const canvas = document.createElement('canvas'); canvas.width = 960; canvas.height = 540;
+    const ctx = canvas.getContext('2d');
+    const level = { ...levels[0], checkpoints: [], collectibles: [], gates: [], exit: null };
+    const frame = { canvas, ctx, level, camera: 0, time: 0, progress: {}, player: createPlayer({ x: 80, y: 380 }) };
+    createRenderer({}).draw(frame);
+    const withSigns = ctx.getImageData(0, 0, 960, 540).data.slice();
+    createRenderer({}).draw({ ...frame, level: { ...level, signs: [] } });
+    const withoutSigns = ctx.getImageData(0, 0, 960, 540).data;
+    return withSigns.every((value, index) => value === withoutSigns[index]);
+  });
+  expect(signPixels, 'sign metadata must not draw floating question blocks').toBe(true);
   expect(result).toHaveLength(5);
   expect(result.every(sample => sample.blackDots === 0)).toBe(true);
   expect(result.every(sample => sample.depthColors >= 3)).toBe(true);

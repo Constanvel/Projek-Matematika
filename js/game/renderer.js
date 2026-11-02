@@ -1,5 +1,5 @@
 import { drawPixelCharacter } from './pixel-character.js';
-import { planWorldLabels, visibleWorldPanels } from './world-labels.js';
+import { planWorldLabels } from './world-labels.js';
 
 const labelLayouts = new WeakMap();
 const labelsFor = level => {
@@ -348,14 +348,6 @@ function checkpoint(ctx, item, active, locked, time, p) {
   if (active) sparkle(ctx, x, floor - 76, p.light, 4);
   else box(ctx, x - 4, floor - 76, 8, 6, locked ? p.stone : p.accent);
 }
-function worldPanel(ctx, entry, p) {
-  const { x, y, w, h } = entry.bounds;
-  // Floating plaques have no long posts that could masquerade as solid terrain.
-  panel(ctx, x, y, w, h, entry.kind === 'sign' ? '#393d37' : p.dark, '#9b865b');
-  box(ctx, x + 4, y + 4, 2, 2, '#cfb57e');
-  box(ctx, x + w - 6, y + h - 6, 2, 2, '#cfb57e');
-  text(ctx, entry.kind === 'checkpoint' ? '✓' : '?', x + w / 2, y + 14, '#e5d8aa');
-}
 function chest(ctx, exit, ready, player, p, time, opened = false) {
   const x = exit.x, floor = exit.y + 70;
   if (ready) {
@@ -512,9 +504,7 @@ export function createRenderer(assets) {
         decorations(world, level, p, camera, animatedTime, surfaceStates);
         for (const item of level.collectibles || []) if (visible(item.x - 30, 60, camera)) collectible(world, item, animatedTime, p, collected.has(item.id));
         const layout = labelsFor(level);
-        for (const entry of visibleWorldPanels(layout, { camera: snap(camera), player, checkpoint: progress.checkpoint })) {
-          if (entry.kind === 'checkpoint' || Math.abs(entry.item.x - center) < 220) worldPanel(world, entry, p);
-        }
+        // No floating blocks above the route. Signs use contextual HTML; flags mark saves.
         for (const item of layout.flags) if (visible(item.x - 70, 140, camera)) checkpoint(world, item, item.members.includes(progress.checkpoint), (item.requiresKeys || 0) > keys || Boolean(item.requiresQuestion && !solved.has(item.requiresQuestion)), animatedTime, p);
         for (const item of level.gates || []) if (visible(item.x - 250, 400, camera)) gate(world, item, solved.has(item.questionId), player, animatedTime, p, level, phaseFor(item.questionId));
         if (level.keyDoor && visible(level.keyDoor.x - 150, 330, camera)) keyDoor(world, level.keyDoor, keys, p, animatedTime, phaseFor('keyDoor'));
