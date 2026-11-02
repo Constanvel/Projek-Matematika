@@ -21,27 +21,42 @@ test('every parkour checkpoint survives walking falls and reload with learning i
       await page.evaluate(state => sessionStorage.setItem('recovery-fixture', JSON.stringify(state)), state);
       await page.reload(); await page.locator('#continue').click();
       await expect(page.locator('#loading')).toBeHidden();
+      await expect(page.locator('#board')).toHaveAttribute('data-player-x', String(route.start));
+      // Observe every persisted flag, not only the final respawn. In cave-ascent
+      // the legacy depths flag overlaps the route entry and must not steal it.
+      await page.evaluate(() => {
+        window.recoveryCheckpoints = [];
+        const setItem = Storage.prototype.setItem;
+        Storage.prototype.setItem = function (key, value) {
+          if (this === localStorage && key === 'gundul-warrior-v1') {
+            window.recoveryCheckpoints.push(JSON.parse(value).checkpoint);
+          }
+          return setItem.call(this, key, value);
+        };
+      });
       await page.keyboard.down('KeyD');
-      await page.evaluate(() => new Promise((resolve, reject) => {
+      const recoveryNotice = await page.evaluate(() => new Promise((resolve, reject) => {
         let falling = false;
         const start = performance.now();
         function tick() {
           const y = Number(document.getElementById('board').dataset.playerY);
           if (y > 500) falling = true;
-          if (falling && y === 380) { resolve(); return; }
+          if (falling && y === 380) { resolve(document.getElementById('interaction').textContent); return; }
           if (performance.now() - start > 8000) { reject(new Error('Tidak mendeteksi jatuh dan respawn')); return; }
           requestAnimationFrame(tick);
         }
         requestAnimationFrame(tick);
       }));
       await page.keyboard.up('KeyD');
-      await expect(page.locator('#interaction')).toContainText('Kembali ke checkpoint');
+      expect(recoveryNotice).toContain('Kembali ke checkpoint');
       const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('gundul-warrior-v1')));
       expect(saved.solved).toEqual(state.solved);
       await expect(page.locator('#score')).toHaveText(String(score(state)));
       expect(saved.keys).toEqual(state.keys);
       expect(saved.collected).toEqual(expect.arrayContaining(state.collected));
       expect(saved.checkpoint).toBe(route.checkpointId);
+      const activated = await page.evaluate(() => window.recoveryCheckpoints);
+      expect(activated.every(id => id === route.checkpointId)).toBe(true);
       expect(Number(await page.locator('#board').getAttribute('data-player-x'))).toBeLessThan(route.gap.start);
       // This reload uses the actual saved result, not the setup fixture.
       await page.evaluate(() => sessionStorage.removeItem('recovery-fixture'));

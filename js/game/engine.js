@@ -174,7 +174,12 @@ export class GameEngine {
     const saved = checkpoints.find(cp => cp.id === progress.checkpoint);
     const local = checkpoints.find(cp => cp.id === this.checkpointId);
     const furthestX = Math.max(saved?.x ?? -Infinity, local?.x ?? -Infinity);
+    const activeRoute = this.level.parkour?.find(route => route.checkpointId === local?.id
+      || route.checkpointId === saved?.id);
     const checkpoint = checkpoints.find(cp => cp.x >= furthestX
+      // A route owns its retry point through its exit. Legacy flags can remain
+      // valid save IDs inside that span, but must not replace the authored entry.
+      && (!activeRoute || cp.id === activeRoute.checkpointId || cp.x >= activeRoute.end)
       && Math.abs(this.player.x - cp.x) <= 50 && Math.abs(this.player.y - cp.y) <= 100
       && (cp.requiresKeys || 0) <= (progress.keys?.length || 0)
       && (!cp.requiresQuestion || progress.solved?.includes(cp.requiresQuestion)));

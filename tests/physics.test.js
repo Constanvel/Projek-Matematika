@@ -6,6 +6,7 @@ import {
 } from '../js/game/physics.js';
 import { GameInput } from '../js/game/input.js';
 import { GameEngine } from '../js/game/engine.js';
+import { levels } from '../js/data/levels.js';
 
 const idle = { axis: 0, jumpPressed: false, jumpHeld: false };
 const floor = { x: -1000, y: 300, w: 3000, h: 100 };
@@ -258,6 +259,38 @@ test('checkpoint activation cannot regress and respects key requirements', () =>
   progress.keys = [0, 1, 2];
   engine.update();
   assert.deepEqual(activated, ['next', 'locked']);
+});
+
+test('cave-ascent owns its retry point until route exit while legacy depths saves still restore', () => {
+  const level = levels.find(item => item.id === 'cave');
+  const route = level.parkour.find(item => item.id === 'cave-ascent');
+  const legacy = level.checkpoints.find(item => item.id === 'depths');
+  const progress = { solved: ['q4', 'q5'], keys: [0], checkpoint: route.checkpointId };
+  const activated = [];
+  const engine = new GameEngine({ canvas: { getContext: () => ({}) }, level,
+    getProgress: () => progress, onCheckpoint: id => { activated.push(id); progress.checkpoint = id; } });
+  for (let x = route.start; x < route.end; x += 5) {
+    engine.player.x = x;
+    engine.player.y = legacy.y;
+    engine.detectCheckpoint(progress);
+    assert.equal(engine.checkpointId, route.checkpointId, `route retains checkpoint at x=${x}`);
+    assert.equal(progress.checkpoint, route.checkpointId);
+  }
+  assert.deepEqual(activated, []);
+  // A flag after the course is still eligible; route ownership is not permanent.
+  engine.player.y = 380;
+  progress.solved.push('q6');
+  const next = level.checkpoints.find(cp => cp.x >= route.end);
+  engine.player.x = next.x;
+  engine.detectCheckpoint(progress);
+  assert.equal(engine.checkpointId, next.id);
+
+  progress.checkpoint = legacy.id;
+  engine.respawn();
+  assert.equal(engine.checkpointId, legacy.id);
+  assert.deepEqual([engine.player.x, engine.player.y], [legacy.x, legacy.y]);
+  engine.detectCheckpoint(progress);
+  assert.equal(engine.checkpointId, legacy.id);
 });
 
 test('solved-machine checkpoints are locked until solved and never steal terminal interaction', () => {

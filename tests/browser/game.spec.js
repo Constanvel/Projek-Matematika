@@ -12,40 +12,56 @@ async function travelUntil(page, text) {
   await expect(page.locator('#modal')).toBeHidden();
   await expect(page.locator('#board')).toHaveAttribute('data-paused', 'false');
   await page.locator('#board').focus();
-  // Drive the public keyboard controls at animation-frame precision. Parkour needs
-  // intentional takeoff before a gap; a bot that only jumps into walls cannot pass.
+  // Dispatch public keyboard controls before each actual physics step. A rendered
+  // frame can contain multiple steps and omit a one-step landing on a narrow ledge.
   await page.evaluate(async targetText => {
     const { levels } = await import('/js/data/levels.js');
+    const { GameEngine } = await import('/js/game/engine.js');
+    const { FIXED_STEP } = await import('/js/game/physics.js');
     const title = document.getElementById('level-title').textContent;
     const level = levels.find(item => item.name === title);
     const board = document.getElementById('board');
     const key = (type, code) => window.dispatchEvent(new KeyboardEvent(type, { code, bubbles: true, cancelable: true }));
+    const jumps = level.parkour?.flatMap(route => route.jumps) || [];
+    let nextJump = jumps.findIndex(jump => jump.x >= Number(board.dataset.playerX));
+    if (nextJump < 0) nextJump = jumps.length;
+    let lastX = -1, stalled = 0, heldSteps = 0;
+    const update = GameEngine.prototype.update;
+    GameEngine.prototype.update = function () {
+      const { x, grounded } = this.player;
+      stalled = x === lastX ? stalled + 1 : 0;
+      if (!heldSteps) key('keyup', 'Space');
+      // Springs can land past the next threshold: consume ordered takeoffs on
+      // first contact, without an upper x bound. Hold for the authored 25 steps.
+      const takeoff = nextJump < jumps.length && x >= jumps[nextJump].x;
+      if (!heldSteps && grounded && (takeoff || stalled >= 5)) {
+        if (takeoff) nextJump++;
+        key('keydown', 'Space'); heldSteps = Math.round(0.42 / FIXED_STEP); stalled = 0;
+      }
+      lastX = x;
+      update.call(this);
+      heldSteps = Math.max(0, heldSteps - 1);
+    };
     key('keyup', 'KeyD'); key('keydown', 'KeyD');
     const started = performance.now();
-    let lastX = -1, stalled = 0, jumpUntil = 0;
-    await new Promise((resolve, reject) => {
-      const tick = now => {
-        if (document.getElementById('interaction').textContent.includes(targetText)) {
-          key('keyup', 'Space'); key('keyup', 'KeyD'); resolve(); return;
-        }
-        if (now - started > 40000) {
-          key('keyup', 'Space'); key('keyup', 'KeyD'); reject(new Error(`Tidak mencapai ${targetText}; x=${board.dataset.playerX}`)); return;
-        }
-        const x = Number(board.dataset.playerX);
-        const grounded = board.dataset.grounded === 'true';
-        stalled = x === lastX ? stalled + 1 : 0;
-        const takeoff = level.parkour?.flatMap(route => route.jumps).some(jump => x >= jump.x - 5 && x <= jump.x + 15);
-        if (now >= jumpUntil) {
-          key('keyup', 'Space');
-          if (grounded && (takeoff || stalled >= 5)) {
-            key('keydown', 'Space'); jumpUntil = now + 420; stalled = 0;
+    try {
+      await new Promise((resolve, reject) => {
+        const tick = now => {
+          // Exit proximity can appear midair before the final landing. Do not
+          // release movement/jump until arrival is supported by a solid floor.
+          if (board.dataset.grounded === 'true'
+            && document.getElementById('interaction').textContent.includes(targetText)) { resolve(); return; }
+          if (now - started > 40000) {
+            reject(new Error(`Tidak mencapai ${targetText}; x=${board.dataset.playerX}; nextJump=${nextJump}`)); return;
           }
-        }
-        lastX = x;
+          requestAnimationFrame(tick);
+        };
         requestAnimationFrame(tick);
-      };
-      requestAnimationFrame(tick);
-    });
+      });
+    } finally {
+      GameEngine.prototype.update = update;
+      key('keyup', 'Space'); key('keyup', 'KeyD');
+    }
   }, text);
 }
 async function answer(page, question) {
