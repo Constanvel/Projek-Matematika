@@ -125,7 +125,7 @@ function background(ctx, theme, p, camera, time) {
       const offset = camera * (.12 + layer * .1), start = Math.floor(offset / 240) - 1;
       for (let i = start; i < start + 7; i++) {
         const x = i * 240 - offset, y = 160 + noise(i + layer * 11) * 70 + layer * 38;
-        polygon(ctx, [[x - 50, 480], [x + 20, y + 80], [x + 70, y + 80], [x + 110, y], [x + 146, y + 32], [x + 180, y + 32], [x + 300, 480]], layer ? p.middle : p.far);
+        polygon(ctx, [[x - 50, HEIGHT + 40], [x + 20, y + 80], [x + 70, y + 80], [x + 110, y], [x + 146, y + 32], [x + 180, y + 32], [x + 300, HEIGHT + 40]], layer ? p.middle : p.far);
         if (!layer) polygon(ctx, [[x + 70, y + 80], [x + 110, y], [x + 146, y + 32], [x + 116, y + 26], [x + 92, y + 80]], theme === 'forest' ? '#829f8c' : '#9a91aa');
       }
     }
@@ -134,16 +134,30 @@ function background(ctx, theme, p, camera, time) {
     for (let layer = 0; layer < 2; layer++) {
       const speed = layer ? .46 : .28, spacing = layer ? 220 : 144;
       const offset = camera * speed, start = Math.floor(offset / spacing) - 1;
-      for (let i = start; i < start + 10; i++) tree(ctx, i * spacing - offset, layer ? 482 : 438, (layer ? 230 : 170) + noise(i + 33 * layer) * 100, layer ? p.near : '#49756a', layer ? '#315b4d' : '#568174', layer ? '#293f37' : '#3b655b');
+      for (let i = start; i < start + 10; i++) {
+        const oldFloor = layer ? 482 : 438;
+        const floor = HEIGHT + 30 + noise(i + 72) * 45;
+        tree(ctx, i * spacing - offset, floor, (layer ? 230 : 170) + noise(i + 33 * layer) * 100 + floor - oldFloor,
+          layer ? p.near : '#49756a', layer ? '#315b4d' : '#568174', layer ? '#293f37' : '#3b655b');
+      }
     }
     // No horizontal foreground-like bands across pits: only collision tops read as paths.
   } else if (theme === 'cave') {
+    // Faceted rear wall bridges sky bands without a flat cutoff behind the pits.
+    const wallOffset = camera * .09, wallStart = Math.floor(wallOffset / 120) - 1;
+    for (let i = wallStart; i < wallStart + 11; i++) {
+      const x = i * 120 - wallOffset, top = 156 + noise(i + 21) * 72;
+      polygon(ctx, [[x - 24, top], [x + 42, top - 22], [x + 126, top + 38], [x + 142, HEIGHT], [x - 24, HEIGHT]], i % 2 ? '#242e43' : '#222b40');
+      line(ctx, x + 42, top - 18, x + 24, top + 92, '#2b364c', 2);
+      line(ctx, x + 24, top + 92, x + 76, top + 164, '#2b364c', 2);
+      line(ctx, x + 76, top + 164, x + 58, HEIGHT, '#2b364c', 2);
+    }
     for (let layer = 0; layer < 2; layer++) {
       const spacing = layer ? 180 : 116, offset = camera * (layer ? .38 : .16), start = Math.floor(offset / spacing) - 1;
       for (let i = start; i < start + 11; i++) {
         const x = i * spacing - offset, length = 54 + noise(i + layer * 31) * 130;
         polygon(ctx, [[x - 66, 0], [x + 70, 0], [x + 42, 40], [x + 18, length], [x + 2, length - 28], [x - 10, 46]], layer ? p.near : p.far);
-        polygon(ctx, [[x - 76, 490], [x - 34, 386], [x - 18, 386], [x + 6, 280 + noise(i) * 92], [x + 32, 394], [x + 58, 420], [x + 80, 490]], layer ? p.near : p.middle);
+        polygon(ctx, [[x - 76, HEIGHT + 40], [x - 34, 386], [x - 18, 386], [x + 6, 280 + noise(i) * 92], [x + 32, 394], [x + 58, 420], [x + 80, HEIGHT + 40]], layer ? p.near : p.middle);
         if (i % 2 === 0) crystal(ctx, x + 28, 438, 46 + noise(i) * 32, layer ? '#386f7d' : '#38536d', layer ? '#65a69e' : '#507b86');
         if (layer && i % 3 === 0) { box(ctx, x, 70, 2, 22, '#426779'); box(ctx, x, 92 + time * 28 % 210, 2, 6, '#80b6bb'); }
       }
@@ -153,10 +167,10 @@ function background(ctx, theme, p, camera, time) {
     const offset = camera * .32, start = Math.floor(offset / 280) - 1;
     for (let i = start; i < start + 6; i++) {
       const x = i * 280 - offset, top = 134 + noise(i) * 54;
-      box(ctx, x, top, 80, 340, p.near); box(ctx, x + 80, top + 100, 200, 250, p.near);
+      box(ctx, x, top, 80, HEIGHT + 40 - top, p.near); box(ctx, x + 80, top + 100, 200, HEIGHT + 40 - top - 100, p.near);
       for (let j = 0; j < 4; j++) box(ctx, x + j * 24 - 2, top - 12, 16, 20, p.near);
       polygon(ctx, [[x - 12, top], [x + 40, top - 64], [x + 92, top]], '#3c3e5c');
-      for (let y = top + 24; y < 448; y += 32) { box(ctx, x + 2, y, 76, 2, '#48516c'); box(ctx, x + ((Math.floor(y / 32) % 2) ? 22 : 52), y + 2, 2, 28, '#343e59'); }
+      for (let y = top + 24; y < HEIGHT; y += 32) { box(ctx, x + 2, y, 76, 2, '#48516c'); box(ctx, x + ((Math.floor(y / 32) % 2) ? 22 : 52), y + 2, 2, 28, '#343e59'); }
       for (let j = 0; j < 3; j++) {
         const wx = x + 26 + j * 92, wy = top + 48 + (j ? 100 : 0);
         polygon(ctx, [[wx, wy + 40], [wx, wy + 8], [wx + 10, wy], [wx + 20, wy + 8], [wx + 20, wy + 40]], '#222e49');
@@ -169,27 +183,40 @@ function background(ctx, theme, p, camera, time) {
       box(ctx, x + 112, top + 128, 6, 22, '#c49d75');
     }
   }
-  // Deep scenery fills the entire camera, not a flat band below the background trees.
-  // Irregular silhouettes are deliberately darker than collision tops; never add a grass edge here.
+  // Continuous depth silhouettes start behind the playable floor and extend offscreen.
+  // No shared horizontal baseline, grass edges or collision-like top highlights.
   const depthOffset = camera * .28;
   const depthStart = Math.floor(depthOffset / 96) - 1;
   for (let i = depthStart; i < depthStart + 13; i++) {
-    const x = i * 96 - depthOffset, top = 476 + noise(i + 93) * 28;
+    const x = i * 96 - depthOffset, top = 412 + noise(i + 93) * 44;
     if (theme === 'forest') {
       polygon(ctx, [[x - 16, HEIGHT], [x - 8, top + 32], [x + 12, top], [x + 42, top - 10], [x + 66, top + 18], [x + 110, HEIGHT]], '#2c514b');
       line(ctx, x + 38, top + 6, x + 28, HEIGHT, '#396159', 4);
       line(ctx, x + 30, top + 32, x + 4, top + 46, '#396159', 4);
       line(ctx, x + 30, top + 38, x + 60, top + 54, '#203f3d', 6);
       box(ctx, x + 62, top + 34, 10, 4, '#476d5c');
+      for (let j = 0; j < 3; j++) {
+        const by = top + 28 + j * 34, bx = x + 16 + noise(i * 7 + j) * 38;
+        polygon(ctx, [[bx - 12, by + 12], [bx, by], [bx + 24, by + 8], [bx + 32, by + 26], [bx + 4, by + 22]], '#31574e');
+        line(ctx, bx + 1, by + 2, bx + 18, by + 8, '#3a6054', 2);
+      }
     } else if (theme === 'cave') {
       polygon(ctx, [[x - 12, HEIGHT], [x + 8, top + 20], [x + 32, top - 18], [x + 52, top + 28], [x + 80, top + 10], [x + 112, HEIGHT]], '#202c43');
       line(ctx, x + 32, top - 10, x + 24, HEIGHT, '#30455a', 4);
+      for (let j = 0; j < 3; j++) {
+        const by = top + 24 + j * 32;
+        line(ctx, x + 30, by, x + 64, by + 14, '#293a50', 2);
+        line(ctx, x + 12, by + 18, x + 25, by + 26, '#34495c', 2);
+      }
       if (i % 2 === 0) crystal(ctx, x + 70, 538, 22 + noise(i) * 16, '#284d5c', '#426c78');
     } else {
-      box(ctx, x, top + 8, 92, HEIGHT - top, '#303a55');
-      for (let row = 0; row < 3; row++) {
+      box(ctx, x - 2, top + 8, 100, HEIGHT - top, '#303a55');
+      for (let row = 0; row < Math.ceil((HEIGHT - top) / 20); row++) {
         box(ctx, x + 2, top + 12 + row * 20, 88, 2, '#414963');
         box(ctx, x + (row % 2 ? 28 : 60), top + 14 + row * 20, 2, 16, '#222d45');
+        const wearX = x + 8 + noise(i * 13 + row) * 64;
+        box(ctx, wearX, top + 17 + row * 20, 10, 2, '#4b526b');
+        box(ctx, wearX + 4, top + 19 + row * 20, 4, 4, '#383f5a');
       }
       polygon(ctx, [[x + 18, HEIGHT], [x + 18, top + 34], [x + 28, top + 24], [x + 42, top + 24], [x + 52, top + 34], [x + 52, HEIGHT]], '#222d45');
     }
