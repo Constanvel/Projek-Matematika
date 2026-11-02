@@ -19,7 +19,7 @@ test('fullscreen viewport, settings persistence, pause and touch movement are fu
   await page.locator('#audio-volume').fill('0.6');
   await page.getByRole('button', { name: 'Simpan & tutup' }).click();
   const preferences = await page.evaluate(() => JSON.parse(localStorage.getItem('gundul-warrior-audio-v1')));
-  expect(preferences).toEqual({ muted: true, volume: .6 });
+  expect(preferences).toEqual({ muted: true, volume: .6, musicVolume: 1, effectsVolume: 1 });
   await launch(page);
   expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1)).toBe(true);
   await page.screenshot({ path: 'test-results/fullscreen-forest.png', fullPage: true });

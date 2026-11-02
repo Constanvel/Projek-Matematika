@@ -1,36 +1,43 @@
 /* Original, locally synthesized score. No samples, downloads, or autoplay. */
 const STORAGE_KEY = 'gundul-warrior-audio-v1';
-const DEFAULTS = Object.freeze({ muted: false, volume: .35 });
+const DEFAULTS = Object.freeze({ muted: false, volume: .35, musicVolume: 1, effectsVolume: 1 });
 const clamp = value => Math.max(0, Math.min(1, value));
 const frequency = midi => 440 * 2 ** ((midi - 69) / 12);
 
-// Three original 8-bar motifs: bright woodland march, spacious crystal waltz,
-// and a resolute castle ostinato. Each number is a MIDI note; 0 is a rest.
+// Original call/response phrases for woodland, crystal cave, and castle.
+// Each number is a MIDI note; 0 is a rest. No recorded samples are used.
 const THEMES = {
   forest: {
     bpm: 108, wave: 'square', bass: [48, 48, 53, 53, 45, 45, 55, 55],
     melody: [72, 0, 76, 79, 76, 72, 74, 0, 77, 0, 81, 79, 77, 76, 74, 0,
       72, 76, 79, 84, 83, 79, 76, 0, 74, 77, 79, 71, 74, 0, 72, 0],
+    response: [72, 0, 79, 76, 74, 72, 67, 0, 77, 0, 79, 81, 79, 76, 74, 0,
+      72, 0, 76, 79, 81, 79, 76, 0, 74, 71, 67, 71, 74, 0, 72, 0],
     harmony: [60, 64, 67, 64, 65, 69, 72, 69, 57, 60, 64, 60, 59, 62, 67, 62],
   },
   cave: {
     bpm: 84, wave: 'triangle', bass: [45, 45, 41, 41, 48, 48, 43, 40],
     melody: [81, 0, 76, 0, 79, 76, 72, 0, 77, 0, 72, 0, 76, 72, 69, 0,
       79, 0, 76, 0, 72, 74, 76, 0, 74, 0, 71, 0, 68, 71, 69, 0],
+    response: [76, 0, 81, 0, 79, 76, 72, 0, 72, 0, 77, 0, 76, 72, 69, 0,
+      76, 0, 79, 0, 81, 79, 76, 0, 74, 0, 71, 0, 68, 71, 69, 0],
     harmony: [57, 60, 64, 60, 53, 57, 60, 57, 60, 64, 67, 64, 55, 59, 64, 59],
   },
   castle: {
     bpm: 124, wave: 'square', bass: [50, 50, 46, 46, 43, 43, 45, 45],
     melody: [74, 74, 0, 77, 81, 0, 79, 77, 74, 0, 77, 82, 81, 77, 0, 74,
       79, 79, 0, 82, 86, 82, 81, 79, 81, 0, 76, 73, 76, 0, 74, 0],
+    response: [74, 0, 77, 81, 84, 81, 79, 77, 74, 0, 77, 79, 81, 79, 77, 0,
+      79, 0, 82, 86, 89, 86, 82, 79, 81, 0, 79, 76, 73, 76, 74, 0],
     harmony: [62, 65, 69, 65, 58, 62, 65, 62, 55, 58, 62, 58, 57, 61, 64, 61],
   },
 };
 
 function normalize(settings, fallback = DEFAULTS) {
+  const volume = key => typeof settings?.[key] === 'number' && Number.isFinite(settings[key]) ? clamp(settings[key]) : fallback[key];
   return {
     muted: typeof settings?.muted === 'boolean' ? settings.muted : fallback.muted,
-    volume: typeof settings?.volume === 'number' && Number.isFinite(settings.volume) ? clamp(settings.volume) : fallback.volume,
+    volume: volume('volume'), musicVolume: volume('musicVolume'), effectsVolume: volume('effectsVolume'),
   };
 }
 function readSettings() {
@@ -46,6 +53,7 @@ export class GameAudio {
     this.context = null;
     this.master = null;
     this.music = null;
+    this.effects = null;
     this.timer = null;
     this.step = 0;
     this.nextNote = 0;
@@ -64,9 +72,12 @@ export class GameAudio {
         this.context = new AudioContext();
         this.master = this.context.createGain();
         this.music = this.context.createGain();
+        this.effects = this.context.createGain();
         this.master.gain.value = this.settings.muted ? 0 : this.settings.volume * .5;
-        this.music.gain.value = this.paused ? 0 : 1;
+        this.music.gain.value = this.paused ? 0 : this.settings.musicVolume;
+        this.effects.gain.value = this.settings.effectsVolume;
         this.music.connect(this.master);
+        this.effects.connect(this.master);
         // Gentle headroom prevents combined voices from clipping.
         const compressor = this.context.createDynamicsCompressor();
         compressor.threshold.value = -12;
@@ -95,6 +106,10 @@ export class GameAudio {
         const now = this.context.currentTime;
         this.master.gain.cancelScheduledValues(now);
         this.master.gain.setTargetAtTime(this.settings.muted ? 0 : this.settings.volume * .5, now, .025);
+        this.music.gain.cancelScheduledValues(now);
+        this.music.gain.setTargetAtTime(this.paused ? 0 : this.settings.musicVolume, now, .025);
+        this.effects.gain.cancelScheduledValues(now);
+        this.effects.gain.setTargetAtTime(this.settings.effectsVolume, now, .025);
       } catch { /* Context may have been closed by the browser. */ }
     }
     return { ...this.settings };
@@ -106,7 +121,7 @@ export class GameAudio {
     try {
       const now = this.context.currentTime;
       this.music.gain.cancelScheduledValues(now);
-      this.music.gain.setTargetAtTime(this.paused ? 0 : 1, now, .025);
+      this.music.gain.setTargetAtTime(this.paused ? 0 : this.settings.musicVolume, now, .025);
       this.clearMusic();
       this.nextNote = now + .05;
     } catch { /* Nonessential audio stays fail-safe. */ }
@@ -135,7 +150,7 @@ export class GameAudio {
   schedule() {
     if (!this.context || this.context.state !== 'running' || this.destroyed) return;
     const now = this.context.currentTime;
-    if (this.paused || this.settings.muted || this.settings.volume === 0) {
+    if (this.paused || this.settings.muted || this.settings.volume === 0 || this.settings.musicVolume === 0) {
       this.nextNote = now + .05;
       return;
     }
@@ -146,7 +161,8 @@ export class GameAudio {
       while (this.nextNote < now + .2) {
         const step = this.step % motif.melody.length;
         const time = this.nextNote;
-        const note = motif.melody[step];
+        const phrase = Math.floor(this.step / motif.melody.length) % 2 ? motif.response : motif.melody;
+        const note = phrase[step];
         if (note) this.tone(note, time, beat * .68, motif.wave, .105, true);
         if (step % 2 === 0) this.tone(motif.bass[Math.floor(step / 4)], time, beat * 1.45, 'triangle', .16, true);
         if (step % 2 === 1) this.tone(motif.harmony[Math.floor(step / 2)], time, beat * .4, 'square', .027, true);
@@ -171,7 +187,7 @@ export class GameAudio {
     envelope.gain.setValueAtTime(volume * .7, time + Math.max(.007, duration * .45));
     envelope.gain.exponentialRampToValueAtTime(.0001, time + duration);
     osc.connect(envelope);
-    envelope.connect(music ? this.music : this.master);
+    envelope.connect(music ? this.music : this.effects);
     this.voices.add(voice);
     osc.onended = () => { osc.disconnect(); envelope.disconnect(); this.voices.delete(voice); };
     osc.start(time);
@@ -217,5 +233,6 @@ export class GameAudio {
     this.context = null;
     this.master = null;
     this.music = null;
+    this.effects = null;
   }
 }

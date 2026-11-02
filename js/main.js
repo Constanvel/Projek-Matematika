@@ -291,19 +291,26 @@ function settings() {
   let speaker = createPixelIcon(mute.checked ? 'muted' : 'speaker');
   label.classList.add('settings-mute');
   label.append(mute, speaker, document.createTextNode('Bisukan musik dan efek suara'));
-  const volumeLabel = document.createElement('label'); volumeLabel.className = 'settings-row'; volumeLabel.htmlFor = 'audio-volume';
-  volumeLabel.textContent = 'Volume';
-  const range = document.createElement('input'); Object.assign(range, { type: 'range', id: 'audio-volume', min: '0', max: '1', step: '0.05', value: String(audio.settings.volume) });
-  const output = document.createElement('output'); output.textContent = `${Math.round(Number(range.value) * 100)}%`;
-  range.addEventListener('input', () => { audio.setSettings({ volume: Number(range.value) }); output.textContent = `${Math.round(Number(range.value) * 100)}%`; });
+  const volumeRows = [['volume', 'audio-volume', 'Volume utama'], ['musicVolume', 'music-volume', 'Musik'], ['effectsVolume', 'effects-volume', 'Efek suara']].map(([key, id, title]) => {
+    const row = document.createElement('div'); row.className = 'settings-row settings-volume';
+    const label = document.createElement('label'); label.htmlFor = id; label.textContent = title;
+    const range = document.createElement('input'); Object.assign(range, { type: 'range', id, min: '0', max: '1', step: '0.05', value: String(audio.settings[key]) });
+    const output = document.createElement('output'); output.htmlFor = id;
+    output.textContent = `${Math.round(Number(range.value) * 100)}%`;
+    range.addEventListener('input', () => {
+      audio.setSettings({ [key]: Number(range.value) });
+      output.textContent = `${Math.round(Number(range.value) * 100)}%`;
+    });
+    row.append(label, range, output);
+    return row;
+  });
   mute.addEventListener('change', () => {
     audio.setSettings({ muted: mute.checked });
     const next = createPixelIcon(mute.checked ? 'muted' : 'speaker');
     speaker.replaceWith(next); speaker = next;
   });
-  volumeLabel.append(range, output);
   const note = document.createElement('p'); note.className = 'small-note'; note.textContent = 'Musik chiptune orisinal dibuat di perangkatmu. Audio berhenti saat permainan dijeda atau tab ditinggalkan.';
-  content.replaceChildren(label, volumeLabel, note);
+  content.replaceChildren(label, ...volumeRows, note);
   mute.focus();
 }
 $('fullscreen')?.addEventListener('click', async () => {
