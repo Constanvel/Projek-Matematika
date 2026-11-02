@@ -103,7 +103,7 @@ async function enterGame() {
       canvas: $('board'), level: levels[state.level], getProgress: () => state,
       draw: createRenderer(assets).draw, onInteract: interact,
       onCheckpoint: id => { state.checkpoint = id; persist(); updateHud(); },
-      onFall: () => { audio.play('fall'); lastInteraction = ''; fallNoticeUntil = performance.now() + 2200; $('interaction').textContent = 'Tidak apa-apa. Kembali ke checkpoint; skor dan jawabanmu tetap aman.'; },
+      onFall: () => { audio.play('fall'); lastInteraction = ''; fallNoticeUntil = performance.now() + 2200; $('game').dataset.contextual = 'true'; $('interaction').textContent = 'Tidak apa-apa. Kembali ke checkpoint; skor dan jawabanmu tetap aman.'; },
       onFrame: updateInteraction, onPause: pause,
       onCollect: item => { if (collectItem(state, item.id)) { persist(); updateHud(); } },
       onEvent: name => audio.play(name === 'secret' ? 'key' : name),
@@ -131,11 +131,22 @@ function updateInteraction(frame) {
   if (!engine || modal.open) return;
   if (performance.now() < fallNoticeUntil) return;
   const item = engine.nearest();
-  let text = 'Ikuti jalan. Dekati mesin bercahaya, lalu tekan E.';
+  const route = engine.level.parkour?.find(route => engine.player.x >= route.start - 90 && engine.player.x < route.end
+    && state.solved.includes(route.requiresQuestion));
+  const nearbySign = engine.level.signs.find(sign => Math.abs(sign.x - engine.player.x) < 150);
+  const teachingSurface = engine.level.platforms.find(platform => platform.surface && engine.player.x + engine.player.w >= platform.x - 45
+    && engine.player.x <= platform.x + platform.w + 45 && Math.abs(engine.player.y + engine.player.h - platform.y) < 105);
+  const surfaceHints = { spring: 'Akar pegas: tekan lompat di atas akar untuk melompat lebih tinggi.',
+    ice: 'Es licin: lepaskan arah lebih awal atau tekan arah berlawanan untuk mengerem.',
+    crumble: 'Batu retak: segera lanjut setelah mendarat. Pijakan pulih setelah runtuh.' };
+  let text = teachingSurface ? surfaceHints[teachingSurface.surface] : route ? `Parkour: ${route.hint || 'ikuti pijakan'}. Lepaskan lalu tekan lompat lagi setelah mendarat.`
+    : nearbySign ? nearbySign.text : 'Ikuti jalan. Dekati mesin bercahaya, lalu tekan E.';
   if (item?.type === 'gate') {
     const gate = item.gate || item;
     text = state.solved.includes(gate.questionId) ? `${gate.label} aktif. Tekan E untuk meninjau pembahasan.` : `${gate.label}. Tekan E untuk memulihkan mesin.`;
   } else if (item?.type === 'exit') text = state.level === 2 ? 'Peti harta ditemukan. Tekan E untuk membukanya.' : 'Wilayah selesai? Tekan E untuk melanjutkan perjalanan.';
+  const contextual = Boolean(nearbySign || teachingSurface || route || (item && item.type !== 'checkpoint'));
+  $('game').dataset.contextual = String(contextual);
   const signature = `${text}:${Boolean(item && item.type !== 'checkpoint')}`;
   if (signature !== lastInteraction) {
     lastInteraction = signature; $('interaction').textContent = text;
@@ -231,7 +242,7 @@ $('retry').addEventListener('click', enterGame);
 $('pause').addEventListener('click', pause);
 $('interact').addEventListener('click', () => { if (!modal.open) interact(); });
 $('victory-menu').addEventListener('click', home);
-$('help').addEventListener('click', () => dialog('Bekal sang petualang', 'Bergerak dengan A/D atau panah kiri/kanan. Lompat dengan Space atau panah atas. Dekati mesin, lalu tekan E atau Interaksi. Pulihkan mesin melalui soal untuk membuka gerbang dan jembatan. Bendera menyimpan checkpoint. Setelah mesin pertama tiap wilayah, ikuti koin dan seberangi rangkaian parkour wajib: tahan lompat untuk menjangkau pijakan, lepaskan lalu tekan lagi setelah mendarat. Jatuh tidak menghapus skor. Saat soal terbuka, dunia berhenti. Komposisi f(g(x)) berarti kerjakan g dahulu, kemudian f. Di ponsel, tahan tombol arah sambil menekan Lompat.', [button('Siap berpetualang', closeDialog)]));
+$('help').addEventListener('click', () => dialog('Bekal sang petualang', 'Bergerak dengan A/D atau panah kiri/kanan. Lompat dengan Space atau panah atas. Dekati mesin, lalu tekan E atau Interaksi. Pulihkan mesin melalui soal untuk membuka gerbang dan jembatan. Bendera menyimpan checkpoint. Setelah mesin pertama dan kedua tiap wilayah, baca petunjuk dan seberangi rangkaian parkour wajib: tahan lompat untuk menjangkau pijakan, lepaskan lalu tekan lagi setelah mendarat. Jatuh tidak menghapus skor. Saat soal terbuka, dunia berhenti. Komposisi f(g(x)) berarti kerjakan g dahulu, kemudian f. Di ponsel, tahan tombol arah sambil menekan Lompat.', [button('Siap berpetualang', closeDialog)]));
 $('about').addEventListener('click', () => dialog('Gundul Warrior', 'Petualangan platformer edukasi fungsi dan komposisi fungsi. Tiga wilayah, dua belas tantangan, dan satu petualang pemberani. Karakter pixel baru mempertahankan identitas aset pengguna; sumber asli tetap disimpan. Lingkungan, animasi, musik chiptune, dan efek dibuat secara lokal dengan Canvas serta Web Audio. Tidak ada akun atau pengiriman data pemain. Statistik merupakan catatan latihan, bukan penilaian formal. Navigasi platformer memerlukan penglihatan; soal dan menu menggunakan HTML yang dapat diakses dengan keyboard.', [button('Tutup', closeDialog)]));
 window.addEventListener('pagehide', persist);
 window.addEventListener('blur', () => { audio.setPaused(true); persist(); pause(); });

@@ -207,4 +207,31 @@ main { width: 100%; max-width: none; height: 100dvh; margin: 0; padding: 0; }
 @media (max-width: 800px) and (orientation: landscape) { .home { padding: 25px 36px; } .hero-copy { width: 340px; max-height: calc(100dvh - 38px); } .hero-copy .eyebrow { font-size: 7px; margin-bottom: 12px; } .game-logo { margin-bottom: 12px; max-width: 280px; } .hero-description, .hero-tagline { display: none; } .menu-actions { max-width: 280px; gap: 8px; } .menu-actions .button { min-height: 44px; padding: 9px 12px; font-size: 9px; } .menu-start { font-size: 10px !important; } .small-note { font-size: 7px; margin-top: 14px; } .game-heading { top: 9px; left: 10px; right: 10px; } .game-heading h1 { font-size: 13px; } .game-heading .eyebrow { display: none; } .hud { top: 61px; left: 10px; padding: 5px 8px; border-width: 1px; } .hud-mission { display: none; } .game-bottom { left: 90px; right: 145px; bottom: 10px; padding: 5px 8px; } .game-bottom p { font-size: 9px; line-height: 1.5; } .game-bottom .button { min-width: 88px; padding: 8px; font-size: 8px; } .touch-controls { bottom: 70px; left: 12px; right: 12px; } .touch-controls button { width: 52px; height: 48px; } .touch-controls .jump { width: 92px; } .victory { justify-content: flex-start; padding-top: 24px; } .victory h1 { font-size: 32px; } .victory > .eyebrow { margin-bottom: 10px; } .final-stats { margin-top: 3px; padding: 13px; } }
 @media (max-width: 600px) and (orientation: portrait) { .home { justify-content: center; align-items: center; padding: 32px 24px 70px; } #menu-world { object-position: 53% center; } .home::before { background: linear-gradient(0deg, #071321e8 0%, #071321a8 45%, #07132177 100%); } .hero-copy { width: 100%; max-width: 380px; max-height: calc(100dvh - 90px); text-align: center; } .hero-copy .eyebrow { font-size: 7px; letter-spacing: 1px; margin-bottom: 22px; } .game-logo { margin-bottom: 22px; } .pixel-logo-art { width: 100%; margin: auto; } .hero-tagline { font-size: 11px; margin-bottom: 13px; } .hero-description { font-size: 12px; max-width: 300px; margin: 0 auto 22px; } .menu-actions { margin: auto; max-width: 330px; } .menu-actions .button { min-height: 48px; font-size: 10px; } .menu-start { font-size: 11px !important; } .small-note { justify-content: center; font-size: 7px; margin-top: 20px; } .game-heading { top: max(12px, env(safe-area-inset-top)); left: 12px; right: 12px; gap: 8px; align-items: flex-start; } .game-heading > div:first-child { padding: 7px 9px; max-width: 195px; } .game-heading h1 { font-size: 14px; } .game-heading .eyebrow { font-size: 6px; letter-spacing: .4px; } .game-heading-actions { gap: 6px; } .game-heading .button { min-height: 44px; padding: 7px 9px; font-size: 8px; } .game-heading .button kbd { display: none; } .hud { top: 82px; left: 12px; right: 12px; max-width: none; padding: 10px; gap: 7px; } .hud-mission { width: 100%; font-size: 7px; } .hud > div { width: 100%; justify-content: space-between; gap: 10px; } .hud b { font-size: 16px; } .game-bottom { left: 12px; right: 12px; bottom: 175px; max-width: none; gap: 9px; padding: 10px; } .game-bottom p { font-size: 11px; line-height: 1.7; } .game-bottom .button { min-width: 102px; padding: 9px 8px; font-size: 9px; } .touch-controls { left: 18px; right: 18px; bottom: 96px; } .touch-controls button { width: 65px; height: 57px; } .touch-controls .jump { width: 116px; } .fullscreen-button { bottom: max(20px, env(safe-area-inset-bottom)); right: 18px; } .victory { padding: 34px 20px 76px; justify-content: safe center; } .victory h1 { font-size: 35px; } .victory .eyebrow { font-size: 7px; } .final-stats { grid-template-columns: 1fr 1fr; gap: 22px 10px; padding: 20px 10px; } }
 @media (max-height: 660px) and (orientation: portrait) { .home { padding-top: 22px; } .hero-copy .eyebrow { margin-bottom: 13px; } .game-logo { max-width: 275px; margin: 0 auto 18px; } .hero-description { display: none; } .hero-tagline { margin-bottom: 18px; } .small-note { font-size: 7px; margin-top: 16px; } .game-bottom { bottom: 135px; } .touch-controls { bottom: 67px; } .touch-controls button { height: 48px; } }
+/* Compact play HUD: fixed CSS text sizes, not scaled with the pixel world. */
+#game .game-heading > div:first-child { padding: 6px 9px; background: #0b1727d9; box-shadow: none; }
+#game .game-heading .eyebrow { display: none; }
+#game .game-heading h1 { font-size: 13px; }
+#game .hud { top: 62px; padding: 5px 9px; border-width: 1px; box-shadow: none; background: #0b1727d9; }
+#game .hud-mission { display: none; }
+#game .hud > div { gap: 14px; font: 11px/1.5 Arial, sans-serif; }
+#game .hud b { font-size: 14px; margin-left: 3px; }
+#game .hud small { font-size: 10px; }
+#game .game-bottom { width: fit-content; max-width: min(580px, calc(100% - 90px)); border-width: 1px; padding: 5px 9px; box-shadow: none; }
+#game .game-bottom p { font-size: 12px; line-height: 1.5; max-width: 410px; }
+#game:not([data-contextual="true"]) .game-bottom { opacity: 0; pointer-events: none; }
+#game .game-bottom:has(.button:disabled) .button { display: none; }
+#board:focus { outline: none; }
+#board:focus-visible { outline: 1px solid #d5d59a66; outline-offset: -1px; }
+@media (max-width: 600px) and (orientation: portrait) {
+  #game .hud { top: 68px; right: auto; }
+  #game .hud > div { width: auto; }
+  #game .game-bottom { max-width: calc(100% - 24px); bottom: 175px; }
+  #game .game-bottom p { font-size: 12px; }
+}
+@media (max-width: 800px) and (orientation: landscape) {
+  #game .game-heading h1 { font-size: 12px; }
+  #game .hud { top: 54px; }
+  #game .game-bottom { max-width: calc(100% - 240px); left: 70px; bottom: 8px; }
+  #game .game-bottom p { font-size: 11px; }
+}
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }

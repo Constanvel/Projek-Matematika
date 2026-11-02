@@ -41,13 +41,14 @@ export function planWorldLabels(level) {
     ...flags.map(flag => flag.bounds),
     ...(level.platforms || []).map(p => ({ x: p.x, y: p.y - 18, w: p.w, h: p.h + 18 })),
     ...(level.collectibles || []).map(c => ({ x: c.x - 16, y: c.y - 20, w: 32, h: 40 })),
-    ...(level.gates || []).map(g => ({ x: g.x - 320, y: 108, w: 410, h: 360 })),
+    ...(level.gates || []).map(g => ({ x: g.x - 170, y: 270, w: 240, h: 198 })),
     ...(level.keyDoor ? [{ x: level.keyDoor.x - 190, y: 240, w: 410, h: 230 }] : []),
     ...(level.exit ? [{ x: level.exit.x - 170, y: level.exit.y - 80, w: 340, h: 160 }] : []),
   ];
   const panels = [], hidden = [];
   const place = (item, kind, lines, preferredY) => {
-    const w = Math.max(...lines.map(pixelTextWidth)) + 20, h = lines.length * 20 + 10;
+    // Text is presented at fixed CSS size in contextual help; world plaques are compact markers.
+    const w = 34, h = 30;
     for (const y of [preferredY, 218, 150, 112]) {
       for (const dx of [0, -80, 80, -160, 160]) {
         const bounds = { x: Math.round((item.x + dx - w / 2) / 2) * 2, y, w, h };

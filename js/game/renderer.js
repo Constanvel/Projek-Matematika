@@ -1,4 +1,3 @@
-import { getMachineFlow } from '../data/machines.js';
 import { drawPixelCharacter } from './pixel-character.js';
 import { planWorldLabels, visibleWorldPanels } from './world-labels.js';
 
@@ -215,12 +214,29 @@ function platform(ctx, item, theme, p, camera, bridge = false, phase = 1) {
       line(ctx, px + 2, y, px, y - 6 - noise(px) * 4, p.edge); line(ctx, px + 4, y, px + 8, y - 4, p.light);
     } else box(ctx, px + 6, y + 2, 4, 2, p.light);
   }
+  if (item.surface === 'spring') {
+    box(ctx, x + 2, y, w - 4, 6, '#b0da78');
+    for (let sx = x + 10; sx < x + w - 8; sx += 24) {
+      line(ctx, sx, y + 16, sx + 6, y + 8, '#f1d788', 2);
+      line(ctx, sx + 6, y + 8, sx + 12, y + 16, '#f1d788', 2);
+    }
+  } else if (item.surface === 'ice') {
+    box(ctx, x, y, w, 8, '#9adbe6');
+    box(ctx, x + 4, y, w - 8, 2, '#e5ffff');
+    for (let sx = x + 12; sx < x + w - 12; sx += 28) line(ctx, sx, y + 4, sx + 10, y + 12, '#e5ffff', 2);
+  } else if (item.surface === 'crumble') {
+    for (let sx = x + 12; sx < x + w - 8; sx += 28) {
+      line(ctx, sx, y, sx - 4, y + 8, '#292338');
+      line(ctx, sx - 4, y + 8, sx + 4, y + 18, '#292338');
+    }
+  }
   if (item.kind === 'ledge' && theme === 'forest') {
     for (let k = 0; k < 3; k++) { const vx = x + 12 + k * 32, length = 12 + noise(x + k) * 24; line(ctx, vx, y + h, vx - 4, y + h + length, '#3b6548'); box(ctx, vx - 8, y + h + length - 8, 6, 4, '#66854c'); }
   }
 }
-function decorations(ctx, level, p, camera, time) {
+function decorations(ctx, level, p, camera, time, surfaceStates = new Map()) {
   for (const ground of level.platforms || []) {
+    if (surfaceStates.get(ground)?.state === 'gone' || ground.surface) continue;
     if (!visible(ground.x, ground.w, camera)) continue;
     const step = ground.kind === 'ground' ? 112 : 80;
     for (let i = Math.max(0, Math.floor((camera - ground.x - 80) / step)); i < Math.min(Math.floor(ground.w / step), Math.ceil((camera + WIDTH - ground.x + 80) / step)); i++) {
@@ -255,48 +271,6 @@ function decorations(ctx, level, p, camera, time) {
     }
   }
 }
-function prompt(ctx, x, y, caption, p) {
-  // A single horizontal prompt reserves its own row; captions never descend onto labels.
-  const width = caption ? textWidth(caption) + 50 : 28;
-  const left = x - width / 2;
-  panel(ctx, left, y - 14, width, 30, p.dark, p.edge);
-  box(ctx, left + 4, y - 10, 24, 22, '#eddfb1');
-  box(ctx, left + 6, y + 10, 20, 2, '#ad9c7c');
-  text(ctx, 'E', left + 16, y - 1, p.dark, 14);
-  if (caption) text(ctx, caption, left + 38, y - 1, '#e6ddb9', 12, 'left');
-}
-function arrow(ctx, x, y, width, color) {
-  line(ctx, x, y, x + width - 4, y, color);
-  line(ctx, x + width - 8, y - 4, x + width - 4, y, color);
-  line(ctx, x + width - 8, y + 4, x + width - 4, y, color);
-}
-function machineFlow(ctx, item, solved, tx, bottom, p) {
-  const flow = getMachineFlow(item.questionId, solved);
-  if (!flow.paths.length) return;
-  const width = 334, left = tx - width / 2;
-  const height = flow.paths.length * 56 + 24 + (flow.summary ? 22 : 0);
-  const top = Math.max(38, bottom - 198 - height);
-  panel(ctx, left, top, width, height, p.dark, p.stone);
-  flow.paths.forEach((path, index) => {
-    const y = top + 26 + index * 56;
-    const count = path.steps.length;
-    if (path.label) text(ctx, path.label, tx, y - 12, p.light);
-    text(ctx, solved ? path.input : 'IN', left + 26, y + 12, '#e9d4a2');
-    arrow(ctx, left + 50, y + 12, 22, p.accent);
-    path.steps.forEach((step, j) => {
-      const sx = left + 76 + j * 104;
-      panel(ctx, sx, y - 2, 38, 28, solved ? '#83baa1' : '#c0a976', p.edge);
-      text(ctx, step.name, sx + 19, y + 10, p.dark);
-      arrow(ctx, sx + 42, y + 12, count === 1 ? 102 : j === count - 1 ? 38 : 58, p.accent);
-      if (solved && j < count - 1) text(ctx, step.output, sx + 72, y - 2, p.light);
-    });
-    // Long algebraic outputs get their own row instead of overlapping the f/g machines.
-    const output = solved ? String(path.output) : 'OUT';
-    if (output.length > 7) text(ctx, `= ${output}`, tx, y + 38, p.light);
-    else text(ctx, output, left + 296, y + 12, p.light);
-  });
-  if (flow.summary) text(ctx, solved ? flow.summary : 'DUA URUTAN - BANDINGKAN', tx, top + height - 14, p.light);
-}
 function gate(ctx, item, solved, player, time, p, level, phase) {
   const x = item.x, bottom = item.y + item.h, width = item.w, tx = x - 66;
   // Pylons deliberately span the exact collision rectangle (including tall gates).
@@ -318,7 +292,7 @@ function gate(ctx, item, solved, player, time, p, level, phase) {
   }
   box(ctx, x - 8, bottom - 10, width + 16, 10, p.dark);
   box(ctx, x - 6, bottom - 10, width + 12, 2, solved ? '#a4d6aa' : p.accent);
-  machineFlow(ctx, item, solved, tx, bottom, p);
+  // Detailed function flow belongs in the paused dialog, never over jump terrain.
   // Pixel conduit links control terminal to the field, including power pulses.
   line(ctx, tx + 18, bottom - 14, x - 8, bottom - 14, p.stone, 4);
   if (solved) box(ctx, tx + 18 + (time * 28 % 30), bottom - 14, 4, 2, p.light);
@@ -332,10 +306,12 @@ function gate(ctx, item, solved, player, time, p, level, phase) {
   for (let i = 0; i < 3; i++) box(ctx, tx - 10 + i * 8, bottom - 22, 4, 4, solved || i === Math.floor(time * 2) % 3 ? p.light : p.dark);
   box(ctx, tx - 10, bottom - 8, 20, 2, p.dark);
   const index = Number(String(item.questionId).replace(/^q/, '')) || (level.questionIds || []).indexOf(item.questionId) + 1;
-  label(ctx, `MESIN ${index}${solved ? ' / OK' : ''}`, tx, bottom - 118, p, solved ? '#b7dca7' : '#edce97');
   const px = player.x + player.w / 2;
   const near = Math.max(item.x - px, 0, px - item.x - item.w) <= 120 && player.y + player.h >= item.y - 140 && player.y <= bottom + 140;
-  if (near) prompt(ctx, tx, bottom - 154, solved ? 'TINJAU MESIN' : 'AKTIFKAN', p);
+  if (near) {
+    label(ctx, `${index}${solved ? ' ✓' : ''}`, tx, bottom - 104, p, solved ? '#b7dca7' : '#edce97');
+    // The CSS-sized interaction button supplies the verb without oversized canvas text.
+  }
 }
 function checkpoint(ctx, item, active, locked, time, p) {
   const floor = item.y + 70, x = item.x;
@@ -353,7 +329,7 @@ function worldPanel(ctx, entry, p) {
   panel(ctx, x, y, w, h, entry.kind === 'sign' ? '#393d37' : p.dark, '#9b865b');
   box(ctx, x + 4, y + 4, 2, 2, '#cfb57e');
   box(ctx, x + w - 6, y + h - 6, 2, 2, '#cfb57e');
-  entry.lines.forEach((value, index) => text(ctx, value, x + w / 2, y + 14 + index * 20, '#e5d8aa'));
+  text(ctx, entry.kind === 'checkpoint' ? '✓' : '?', x + w / 2, y + 14, '#e5d8aa');
 }
 function chest(ctx, exit, ready, player, p, time, opened = false) {
   const x = exit.x, floor = exit.y + 70;
@@ -370,8 +346,7 @@ function chest(ctx, exit, ready, player, p, time, opened = false) {
   for (const dx of [-20, 14]) { box(ctx, x + dx, floor - 44, 6, 40, '#dfb969'); box(ctx, x + dx, floor - 42, 2, 36, '#f3d68c'); }
   panel(ctx, x - 7, floor - 30, 14, 16, '#edce7e', '#72563e');
   box(ctx, x - 2, floor - 26, 4, 4, p.dark); box(ctx, x, floor - 22, 2, 4, p.dark);
-  label(ctx, 'PETI PENGETAHUAN', x, floor - 80, p, '#ebce91');
-  if (Math.abs(player.x + player.w / 2 - x) <= 140 && Math.abs(player.y - exit.y) < 160) prompt(ctx, x, floor - 116, ready ? 'BUKA PETI' : 'PULIHKAN MESIN', p);
+  if (Math.abs(player.x + player.w / 2 - x) <= 140 && Math.abs(player.y - exit.y) < 160) label(ctx, 'E', x, floor - 80, p, '#ebce91');
 }
 function keyDoor(ctx, item, keys, p, time, phase = 1) {
   const x = item.x, bottom = item.y + item.h, open = keys >= 3;
@@ -387,7 +362,7 @@ function keyDoor(ctx, item, keys, p, time, phase = 1) {
   polygon(ctx, [[x - 24, 320], [x + item.w / 2, 286], [x + item.w + 24, 320], [x + item.w + 24, 336], [x - 24, 336]], p.stone);
   line(ctx, x - 20, 320, x + item.w / 2, 294, p.accent, 2); line(ctx, x + item.w / 2, 294, x + item.w + 20, 320, p.accent, 2);
   for (let i = 0; i < 3; i++) crystal(ctx, x + item.w / 2 + (i - 1) * 18, 330, 14, i < keys ? '#d8a866' : '#4d536b', i < keys ? '#ffe2a1' : '#697386');
-  label(ctx, open ? 'RUANG HARTA TERBUKA' : `GERBANG HARTA / ${keys}/3 KUNCI`, x + item.w / 2, 264, p);
+  label(ctx, open ? '✓' : `${keys}/3`, x + item.w / 2, 264, p);
   if (open) for (let i = 0; i < 3; i++) sparkle(ctx, x + i * 14, 352 + (time * 20 + i * 22) % 80, p.accent, 2);
 }
 function collectible(ctx, item, time, p, collected) {
@@ -493,12 +468,28 @@ export function createRenderer(assets) {
         background(world, level.theme, p, snap(camera), animatedTime);
         world.save();
         world.translate(-snap(camera), 0);
-        for (const item of level.platforms || []) platform(world, item, level.theme, p, camera);
+        const surfaceStates = new Map((frame.surfaceStates || []).map(state => [state.platform, state]));
+        for (const item of level.platforms || []) {
+          const state = surfaceStates.get(item);
+          if (state?.state === 'gone') {
+            // Thin dotted outline communicates recovery without suggesting solid support.
+            for (let x = item.x; x < item.x + item.w; x += 12) box(world, x, item.y + 12, 4, 2, p.stone);
+            continue;
+          }
+          platform(world, item, level.theme, p, camera);
+          if (state?.state === 'cracking') {
+            const width = Math.max(2, item.w * Math.min(1, state.remaining / .7));
+            box(world, item.x, item.y - 6, item.w, 4, p.dark);
+            box(world, item.x, item.y - 6, width, 4, '#efb56e');
+          }
+        }
         for (const item of level.gates || []) if (item.bridge && solved.has(item.questionId)) platform(world, item.bridge, level.theme, p, camera, true, phaseFor(item.questionId));
-        decorations(world, level, p, camera, animatedTime);
+        decorations(world, level, p, camera, animatedTime, surfaceStates);
         for (const item of level.collectibles || []) if (visible(item.x - 30, 60, camera)) collectible(world, item, animatedTime, p, collected.has(item.id));
         const layout = labelsFor(level);
-        for (const entry of visibleWorldPanels(layout, { camera: snap(camera), player, checkpoint: progress.checkpoint })) worldPanel(world, entry, p);
+        for (const entry of visibleWorldPanels(layout, { camera: snap(camera), player, checkpoint: progress.checkpoint })) {
+          if (entry.kind === 'checkpoint' || Math.abs(entry.item.x - center) < 220) worldPanel(world, entry, p);
+        }
         for (const item of layout.flags) if (visible(item.x - 70, 140, camera)) checkpoint(world, item, item.members.includes(progress.checkpoint), (item.requiresKeys || 0) > keys || Boolean(item.requiresQuestion && !solved.has(item.requiresQuestion)), animatedTime, p);
         for (const item of level.gates || []) if (visible(item.x - 250, 400, camera)) gate(world, item, solved.has(item.questionId), player, animatedTime, p, level, phaseFor(item.questionId));
         if (level.keyDoor && visible(level.keyDoor.x - 150, 330, camera)) keyDoor(world, level.keyDoor, keys, p, animatedTime, phaseFor('keyDoor'));
