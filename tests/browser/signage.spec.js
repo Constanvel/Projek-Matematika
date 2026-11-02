@@ -4,6 +4,7 @@ import { levels } from '../../js/data/levels.js';
 
 // Saved checkpoints are fixture setup only. Full keyboard traversal remains in game.spec.js.
 test('parkour signs and checkpoint clusters stay readable across all regions', async ({ page }) => {
+  test.setTimeout(120000);
   const errors = []; page.on('pageerror', error => errors.push(error.message));
   const state = freshState();
   // Apply fixture after navigation: the outgoing live engine may save on unload.
@@ -32,6 +33,11 @@ test('parkour signs and checkpoint clusters stay readable across all regions', a
       }, { levelId: level.id, routeId: route.id });
       expect(geometry).toEqual({ hasHint: true, collision: false, flags: 1 });
       await page.screenshot({ path: `test-results/signage-${route.id}.png`, fullPage: true });
+      if (level.id === 'castle' && route === level.parkour.at(-1)) {
+        await page.setViewportSize({ width: 390, height: 844 });
+        await page.screenshot({ path: 'test-results/signage-portrait.png', fullPage: true });
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      }
     }
     for (const id of level.questionIds) {
       if (!state.solved.includes(id)) { state.attempts[id] = 1; completeQuestion(state, id); }

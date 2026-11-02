@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { levels, solidsFor } from '../js/data/levels.js';
+import { GameEngine } from '../js/game/engine.js';
 import { freshState, completeQuestion, advanceLevel, validateState } from '../js/state.js';
 import { createPlayer, stepPlayer, FIXED_STEP, PLAYER_WIDTH, PLAYER_HEIGHT } from '../js/game/physics.js';
 
@@ -15,18 +16,27 @@ const snapshot = [
     checkpoints: [['start', 80], ['tower', 1200], ['hall', 2310], ['treasure', 3140], ['core', 4500]] },
 ];
 
-test('saved checkpoints, gate positions, exits and original bridge floors remain compatible', () => {
+test('saved checkpoints, gate positions and original bridge floors remain compatible across longer worlds', () => {
   levels.forEach((level, index) => {
     const original = snapshot[index];
     assert.deepEqual(level.spawn, { x: 80, y: 380 });
     const expectedFloors = original.ground.flatMap(([x, w]) => {
-      const gap = level.parkour[0].gap;
-      return x < gap.start && x + w > gap.end
-        ? [[x, gap.start - x], [gap.end, x + w - gap.end]] : [[x, w]];
+      const originalWidth = original.ground.at(-1)[0] + original.ground.at(-1)[1];
+      let spans = [[x, w + (x + w === originalWidth ? level.width - originalWidth : 0)]];
+      for (const { gap } of level.parkour) {
+        spans = spans.flatMap(([left, width]) => left < gap.start && left + width > gap.end
+          ? [[left, gap.start - left], [gap.end, left + width - gap.end]] : [[left, width]]);
+      }
+      return spans;
     });
     assert.deepEqual(level.platforms.filter(p => p.y === 450).map(p => [p.x, p.w]), expectedFloors);
     assert.deepEqual(level.gates.map(g => g.x), original.gates);
-    assert.deepEqual(level.exit, { x: original.exit, y: 380 });
+    for (const gate of level.gates) {
+      const machineCheckpoint = level.checkpoints.find(cp => cp.id === `machine-${gate.questionId}`);
+      assert.equal(machineCheckpoint.x, gate.x - 120, 'legacy machine restart coordinates are unchanged');
+    }
+    assert.equal(level.exit.y, 380);
+    assert.ok(level.exit.x > original.exit + 1800, 'finale extends the playable journey beyond the legacy exit');
     assert.deepEqual(level.checkpoints.filter(cp => !cp.id.startsWith('machine-') && !cp.id.startsWith('parkour-')).map(cp => [cp.id, cp.x]), original.checkpoints);
     for (const checkpoint of level.checkpoints) {
       const body = { ...checkpoint, w: PLAYER_WIDTH, h: PLAYER_HEIGHT };
@@ -36,11 +46,13 @@ test('saved checkpoints, gate positions, exits and original bridge floors remain
     }
     const floors = solidsFor(level, solvedState).filter(p => p.y === 450).sort((a, b) => a.x - b.x);
     let edge = 0;
+    const removedSpans = [];
     for (const floor of floors) {
-      if (floor.x > edge) assert.deepEqual([edge, floor.x], [level.parkour[0].gap.start, level.parkour[0].gap.end]);
+      if (floor.x > edge) removedSpans.push([edge, floor.x]);
       edge = Math.max(edge, floor.x + floor.w);
     }
-    assert.equal(edge, level.width, 'only the explicit parkour span removes original floor');
+    assert.deepEqual(removedSpans, level.parkour.map(({ gap }) => [gap.start, gap.end]));
+    assert.equal(edge, level.width, 'only the explicit parkour spans remove original floor');
     for (const obstacle of level.platforms.filter(p => p.kind === 'ground' && p.y < 450)) {
       assert.ok(450 - obstacle.y <= 48, 'mandatory steps stay short');
     }
@@ -51,15 +63,15 @@ test('parkour checkpoints validate only after the relevant mandatory gate is sol
   const state = freshState();
   levels.forEach((level, index) => {
     assert.equal(state.level, index);
-    const route = level.parkour[0];
-    assert.equal(validateState({ ...state, checkpoint: route.checkpointId }), null);
-    const gateIndex = level.questionIds.indexOf(route.requiresQuestion);
-    for (const id of level.questionIds.slice(0, gateIndex + 1)) {
-      state.attempts[id] = 1;
-      completeQuestion(state, id);
+    for (const route of level.parkour) {
+      if (!state.solved.includes(route.requiresQuestion)) assert.equal(validateState({ ...state, checkpoint: route.checkpointId }), null);
+      const gateIndex = level.questionIds.indexOf(route.requiresQuestion);
+      for (const id of level.questionIds.slice(0, gateIndex + 1)) {
+        if (!state.solved.includes(id)) { state.attempts[id] = 1; completeQuestion(state, id); }
+      }
+      assert.equal(validateState({ ...state, checkpoint: route.checkpointId }).checkpoint, route.checkpointId);
     }
-    assert.equal(validateState({ ...state, checkpoint: route.checkpointId }).checkpoint, route.checkpointId);
-    for (const id of level.questionIds.slice(gateIndex + 1)) {
+    for (const id of level.questionIds.filter(id => !state.solved.includes(id))) {
       state.attempts[id] = 1;
       completeQuestion(state, id);
     }
@@ -86,6 +98,7 @@ test('coins have stable unique IDs and prerequisites agree with every preceding 
       }
     });
   }
+  assert.equal(ids.size, 55, 'all original collectible IDs remain stable');
 });
 
 // Build a conservative reachability graph using actual collision and held jumps, not just distances.
@@ -166,16 +179,24 @@ test('route-aware timed jumps reach each machine and exit without teleporting or
   }
 });
 
-test('mandatory parkour needs its advertised 2/3/3 jumps and tolerates delayed jump polling', () => {
+test('all four mandatory parkour sequences need every advertised jump and tolerate delayed polling', () => {
   levels.forEach((level, index) => {
-    assert.equal(level.parkour.length, 1);
-    const route = level.parkour[0];
-    assert.equal(route.jumps.length, index === 0 ? 2 : 3);
+    assert.equal(level.parkour.length, 4);
+    assert.ok(level.parkour[1].start > level.gates[1].x + level.gates[1].w);
+    assert.ok(level.width >= [5200, 6200, 8400][index]);
+    assert.equal(level.parkour.reduce((count, route) => count + route.jumps.length, 0), [12, 16, 18][index]);
+    for (const [routeIndex, route] of level.parkour.entries()) {
+    assert.equal(route.jumps.length, routeIndex < 2 ? (index === 0 ? 2 : 3) : [4, 5, 6][index]);
     const checkpoint = level.checkpoints.find(cp => cp.id === route.checkpointId);
     assert.equal(checkpoint.x, route.start);
     assert.equal(checkpoint.requiresQuestion, route.requiresQuestion);
     assert.ok(route.start + PLAYER_WIDTH < route.gap.start);
     assert.ok(route.end > route.gap.end);
+    for (const jump of route.jumps) {
+      const landing = level.platforms.find(p => p.x === jump.landX);
+      assert.ok(landing && landing.w >= 64, `${route.id}: readable landing at least 64px wide`);
+      assert.ok(jump.landX - jump.x < 480, `${route.id}: landing visible before launch`);
+    }
     assert.ok(!level.gates.some(g => g.x > route.start && g.x < route.end));
     const solids = solidsFor(level, solvedState);
     const simulate = (skip = -1, delay = 0) => {
@@ -202,7 +223,7 @@ test('mandatory parkour needs its advertised 2/3/3 jumps and tolerates delayed j
       }
       return { passed: false, landings };
     };
-    for (const delay of [0, 5, 10, 15]) {
+    for (const delay of Array.from({ length: 16 }, (_, delay) => delay)) {
       const result = simulate(-1, delay);
       assert.equal(result.passed, true, `${level.id}: timed route, ${delay}px polling delay`);
       assert.deepEqual(result.landings, route.jumps.map(jump => jump.landX));
@@ -216,8 +237,38 @@ test('mandatory parkour needs its advertised 2/3/3 jumps and tolerates delayed j
       if (stepPlayer(walker, { axis: 1 }, FIXED_STEP, solids, level.height).fell) { fell = true; break; }
       assert.ok(walker.x < route.end, `${level.id}: cannot walk under the elevated route`);
     }
-    assert.equal(fell, true, `${level.id}: walking alone cannot cross the missing floor`);
+    assert.equal(fell, true, `${level.id}/${route.id}: walking alone cannot cross the missing floor`);
+    }
   });
+});
+
+test('extended finales cross actual dynamic surfaces with delayed launches and no falls', () => {
+  for (const level of levels) {
+    for (const route of level.parkour.slice(1)) {
+      for (const delay of Array.from({ length: 16 }, (_, delay) => delay)) {
+        let falls = 0;
+        const engine = new GameEngine({ canvas: { getContext: () => ({}) }, level,
+          getProgress: () => ({ ...solvedState, checkpoint: route.checkpointId }), onFall: () => falls++ });
+        let next = 0, hold = 0, reached = false;
+        const landings = [];
+        engine.input.sample = () => {
+          const press = engine.player.grounded && next < route.jumps.length && engine.player.x >= route.jumps[next].x + delay;
+          if (press) { next++; hold = 25; }
+          return { axis: 1, jumpPressed: press, jumpHeld: hold-- > 0 };
+        };
+        for (let frame = 0; frame < 1200; frame++) {
+          const wasGrounded = engine.player.grounded;
+          engine.update();
+          if (!wasGrounded && engine.player.grounded && next) landings.push(engine.player.landedPlatform.x);
+          if (falls || engine.player.x >= route.end && engine.player.grounded) { reached = !falls; break; }
+        }
+        assert.equal(falls, 0, `${route.id}: actual engine ${delay}px delay`);
+        assert.equal(reached, true, `${route.id}: actual engine reaches safe rest area`);
+        assert.deepEqual(landings, route.jumps.map(jump => jump.landX));
+        if (level.gimmick.id === 'crumble') assert.ok(engine.surfaceStates.some(surface => surface.state !== 'intact'), 'crumble timers actually activate');
+      }
+    }
+  }
 });
 
 test('closed mandatory gates and the three-key door block even repeated upper-route jumps', () => {
