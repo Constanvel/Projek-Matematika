@@ -1,27 +1,21 @@
-const POSES = [
-  'posturkanan', 'posturkiri', 'posturdepan',
-  'posturberjalan', 'posturberlari', 'posturmelambai',
-];
-
-/** Load the normalized PNGs, retaining their shared (224, 528) foot anchor. */
+/** Preload the local pixel atlas; high-resolution source poses are never runtime dependencies. */
 export function loadAssets() {
-  return Promise.all(POSES.map(name => new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     const image = new Image();
-    const url = new URL(`../../assets/character/processed/${name}.png`, import.meta.url);
+    const url = new URL('../../assets/character/pixel/gundul-sheet.png', import.meta.url);
+    const cleanup = () => { image.onload = null; image.onerror = null; };
     image.onload = () => {
-      image.onload = null;
-      image.onerror = null;
+      cleanup();
       if (!image.naturalWidth || !image.naturalHeight) {
-        reject(new Error(`Gambar karakter ${name}.png kosong atau rusak. Muat ulang permainan.`));
+        reject(new Error('Atlas pixel Gundul kosong atau rusak. Periksa aset lokal, lalu coba lagi.'));
         return;
       }
-      resolve([name, image]);
+      resolve({ pixelAtlas: image });
     };
     image.onerror = () => {
-      image.onload = null;
-      image.onerror = null;
-      reject(new Error(`Gagal memuat karakter ${name}.png (${url.pathname}). Periksa berkas aset dan koneksi, lalu muat ulang permainan.`));
+      cleanup();
+      reject(new Error(`Gagal memuat atlas pixel Gundul (${url.pathname}). Periksa berkas lokal, lalu coba lagi.`));
     };
     image.src = url.href;
-  }))).then(entries => Object.fromEntries(entries));
+  });
 }
