@@ -94,13 +94,20 @@ function crystal(ctx, x, y, size, color, light = '#b7f3dc') {
 function cloud(ctx, x, y, color) {
   box(ctx, x + 18, y, 56, 6, color); box(ctx, x + 4, y + 6, 92, 10, color); box(ctx, x, y + 16, 118, 8, color); box(ctx, x + 12, y + 24, 94, 4, color);
 }
-function tree(ctx, x, floor, height, color, highlight, trunk) {
+function tree(ctx, x, floor, height, color, highlight, trunk, broadleaf = false) {
   const crown = floor - height;
   box(ctx, x - 8, crown + 54, 16, height - 54, trunk);
   box(ctx, x - 4, crown + 70, 4, height - 70, color);
   line(ctx, x - 4, crown + 106, x - 34, crown + 66, trunk, 6);
   line(ctx, x + 4, crown + 128, x + 32, crown + 82, trunk, 6);
-  for (let tier = 0; tier < 3; tier++) {
+  if (broadleaf) {
+    // Overlapping rounded crowns avoid flat, platform-like edges in the distance.
+    for (const [dx, dy, rx, ry] of [[-46, 56, 50, 36], [44, 48, 56, 42], [-10, 20, 60, 42], [6, 66, 68, 32]]) {
+      oval(ctx, x + dx, crown + dy, rx, ry, color);
+      line(ctx, x + dx - rx * .4, crown + dy - ry * .6, x + dx, crown + dy - ry * .72, highlight, 4);
+    }
+    line(ctx, x - 4, crown + 94, x + 24, crown + 56, trunk, 4);
+  } else for (let tier = 0; tier < 3; tier++) {
     const y = crown + tier * 32;
     const w = 54 + tier * 20;
     polygon(ctx, [[x - w, y + 48], [x - w + 10, y + 28], [x - 28, y + 28], [x - 28, y + 10], [x - 10, y + 10], [x - 10, y], [x + 18, y], [x + 18, y + 10], [x + 36, y + 10], [x + 36, y + 26], [x + w - 10, y + 26], [x + w, y + 46]], color);
@@ -138,7 +145,7 @@ function background(ctx, theme, p, camera, time) {
         const oldFloor = layer ? 482 : 438;
         const floor = HEIGHT + 30 + noise(i + 72) * 45;
         tree(ctx, i * spacing - offset, floor, (layer ? 230 : 170) + noise(i + 33 * layer) * 100 + floor - oldFloor,
-          layer ? p.near : '#49756a', layer ? '#315b4d' : '#568174', layer ? '#293f37' : '#3b655b');
+          layer ? p.near : '#49756a', layer ? '#315b4d' : '#568174', layer ? '#293f37' : '#3b655b', i % 3 !== 0);
       }
     }
     // No horizontal foreground-like bands across pits: only collision tops read as paths.
@@ -152,6 +159,19 @@ function background(ctx, theme, p, camera, time) {
       line(ctx, x + 24, top + 92, x + 76, top + 164, '#2b364c', 2);
       line(ctx, x + 76, top + 164, x + 58, HEIGHT, '#2b364c', 2);
     }
+    // Rear-wall water runs below the viewport; no luminous horizontal pool at pit height.
+    const fallOffset = camera * .09, fallStart = Math.floor(fallOffset / 720) - 1;
+    for (let i = fallStart; i < fallStart + 4; i++) {
+      const x = i * 720 + 340 - fallOffset, top = 170 + noise(i + 84) * 46;
+      polygon(ctx, [[x - 30, top - 24], [x + 20, top - 32], [x + 42, top + 8], [x + 30, HEIGHT], [x - 40, HEIGHT]], '#1b2c40');
+      for (let stream = 0; stream < 5; stream++) {
+        const sx = x - 22 + stream * 10, sy = top + noise(i * 7 + stream) * 18;
+        box(ctx, sx, sy, 6, HEIGHT - sy, stream % 2 ? '#304f63' : '#2b455c');
+        for (let y = sy - 34 + (time * 26 + stream * 19) % 64; y < HEIGHT; y += 64) {
+          if (y >= sy) box(ctx, sx, y, 2, 16, '#42657a');
+        }
+      }
+    }
     for (let layer = 0; layer < 2; layer++) {
       const spacing = layer ? 180 : 116, offset = camera * (layer ? .38 : .16), start = Math.floor(offset / spacing) - 1;
       for (let i = start; i < start + 11; i++) {
@@ -164,6 +184,18 @@ function background(ctx, theme, p, camera, time) {
     }
     for (let i = 0; i < 9; i++) { const x = i * 128 - camera * .11 % 128; box(ctx, x, 476, 72, 2, '#487281'); box(ctx, x + 14, 486, 42, 2, '#35556c'); }
   } else {
+    // A slower, lighter keep sits behind the repeating near battlements.
+    const keepOffset = camera * .14, keepStart = Math.floor(keepOffset / 920) - 1;
+    for (let i = keepStart; i < keepStart + 3; i++) {
+      const x = i * 920 + 440 - keepOffset, top = 166 + noise(i + 38) * 30;
+      box(ctx, x - 92, top + 66, 184, HEIGHT - top, '#626c8c');
+      for (const dx of [-100, -30, 48]) {
+        const towerTop = top + (dx === -30 ? -28 : 16);
+        box(ctx, x + dx, towerTop, 44, HEIGHT - towerTop, '#626c8c');
+        polygon(ctx, [[x + dx - 8, towerTop], [x + dx + 22, towerTop - 46], [x + dx + 52, towerTop]], '#555f81');
+        box(ctx, x + dx + 18, towerTop + 20, 8, 24, '#81839b');
+      }
+    }
     const offset = camera * .32, start = Math.floor(offset / 280) - 1;
     for (let i = start; i < start + 6; i++) {
       const x = i * 280 - offset, top = 134 + noise(i) * 54;
@@ -171,6 +203,11 @@ function background(ctx, theme, p, camera, time) {
       for (let j = 0; j < 4; j++) box(ctx, x + j * 24 - 2, top - 12, 16, 20, p.near);
       polygon(ctx, [[x - 12, top], [x + 40, top - 64], [x + 92, top]], '#3c3e5c');
       for (let y = top + 24; y < HEIGHT; y += 32) { box(ctx, x + 2, y, 76, 2, '#48516c'); box(ctx, x + ((Math.floor(y / 32) % 2) ? 22 : 52), y + 2, 2, 28, '#343e59'); }
+      for (let arch = 0; arch < 2; arch++) {
+        const ax = x + 108 + arch * 76, ay = top + 204;
+        polygon(ctx, [[ax, HEIGHT], [ax, ay + 14], [ax + 12, ay], [ax + 26, ay], [ax + 38, ay + 14], [ax + 38, HEIGHT]], '#303c59');
+        line(ctx, ax - 4, ay + 20, ax + 10, ay - 4, '#48516c');
+      }
       for (let j = 0; j < 3; j++) {
         const wx = x + 26 + j * 92, wy = top + 48 + (j ? 100 : 0);
         polygon(ctx, [[wx, wy + 40], [wx, wy + 8], [wx + 10, wy], [wx + 20, wy + 8], [wx + 20, wy + 40]], '#222e49');
@@ -254,6 +291,13 @@ function platform(ctx, item, theme, p, camera, bridge = false, phase = 1) {
       const bh = Math.min(20, y + h - by);
       box(ctx, sx, by, ex - sx, bh, row === 0 || theme === 'castle' ? p.stone : noise(bx + row * 9) > .5 ? '#494044' : p.soil);
       box(ctx, sx, by, ex - sx, 2, theme === 'castle' ? '#777082' : '#75604b');
+      if (theme === 'forest' && row > 0 && bh > 12 && ex - sx > 16) {
+        line(ctx, sx + 6, by + 4, sx + 10, by + Math.min(14, bh - 2), '#59483e');
+      } else if (theme === 'cave' && bh > 12 && ex - sx > 16 && noise(bx + row * 17) > .6) {
+        // Small mineral flecks stay inside the solid, away from ice and landing edges.
+        box(ctx, sx + 8, by + 8, 4, 2, '#68758a');
+        box(ctx, sx + 10, by + 10, 2, 2, '#49586d');
+      }
       if (noise(bx + row) > .55) { box(ctx, sx + 4, by + 6, 4, 2, p.shade); box(ctx, sx + 10, by + 12, 6, 2, p.shade); }
     }
   }
