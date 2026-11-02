@@ -507,8 +507,7 @@ export function createRenderer(assets) {
           else box(world, px, py, 2 + (Math.floor(t * 8) % 2) * 2, 4, particle.color);
         }
         world.restore();
-        // Dithered pit depths leave the traversable top edge completely unobscured.
-        for (let row = 0; row < 12; row++) for (let x = (row % 2) * 6; x < WIDTH; x += 12) if (noise(x + row) < row / 16) box(world, x, 496 + row * 4, 2, 2, '#171c2c');
+        // Pit depth stays clean: no screen-space dots over terrain or HUD.
       } finally { world.restore(); }
       ctx.save();
       try {
