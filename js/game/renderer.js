@@ -169,6 +169,31 @@ function background(ctx, theme, p, camera, time) {
       box(ctx, x + 112, top + 128, 6, 22, '#c49d75');
     }
   }
+  // Deep scenery fills the entire camera, not a flat band below the background trees.
+  // Irregular silhouettes are deliberately darker than collision tops; never add a grass edge here.
+  const depthOffset = camera * .28;
+  const depthStart = Math.floor(depthOffset / 96) - 1;
+  for (let i = depthStart; i < depthStart + 13; i++) {
+    const x = i * 96 - depthOffset, top = 476 + noise(i + 93) * 28;
+    if (theme === 'forest') {
+      polygon(ctx, [[x - 16, HEIGHT], [x - 8, top + 32], [x + 12, top], [x + 42, top - 10], [x + 66, top + 18], [x + 110, HEIGHT]], '#2c514b');
+      line(ctx, x + 38, top + 6, x + 28, HEIGHT, '#396159', 4);
+      line(ctx, x + 30, top + 32, x + 4, top + 46, '#396159', 4);
+      line(ctx, x + 30, top + 38, x + 60, top + 54, '#203f3d', 6);
+      box(ctx, x + 62, top + 34, 10, 4, '#476d5c');
+    } else if (theme === 'cave') {
+      polygon(ctx, [[x - 12, HEIGHT], [x + 8, top + 20], [x + 32, top - 18], [x + 52, top + 28], [x + 80, top + 10], [x + 112, HEIGHT]], '#202c43');
+      line(ctx, x + 32, top - 10, x + 24, HEIGHT, '#30455a', 4);
+      if (i % 2 === 0) crystal(ctx, x + 70, 538, 22 + noise(i) * 16, '#284d5c', '#426c78');
+    } else {
+      box(ctx, x, top + 8, 92, HEIGHT - top, '#303a55');
+      for (let row = 0; row < 3; row++) {
+        box(ctx, x + 2, top + 12 + row * 20, 88, 2, '#414963');
+        box(ctx, x + (row % 2 ? 28 : 60), top + 14 + row * 20, 2, 16, '#222d45');
+      }
+      polygon(ctx, [[x + 18, HEIGHT], [x + 18, top + 34], [x + 28, top + 24], [x + 42, top + 24], [x + 52, top + 34], [x + 52, HEIGHT]], '#222d45');
+    }
+  }
   for (let i = 0; i < 24; i++) {
     const x = ((noise(i + 101) * 1100 - camera * .18 + time * (3 + noise(i) * 4)) % 1100 + 1100) % 1100 - 60;
     const y = 82 + noise(i + 51) * 338 + Math.sin(time * .6 + i) * 4;
