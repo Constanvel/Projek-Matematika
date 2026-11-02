@@ -6,6 +6,7 @@ import { GameEngine } from './game/engine.js';
 import { loadAssets } from './game/assets.js';
 import { createRenderer } from './game/renderer.js';
 import { showQuestion } from './ui/questions.js';
+import { createPixelIcon } from './ui/pixel-icons.js';
 import { GameAudio } from './game/audio.js';
 import { startMenuScene } from './game/menu-scene.js';
 import { loadRun, saveRun, resetRun, takeFall, getLeaderboard, recordVictory } from './game/run-records.js';
@@ -260,6 +261,7 @@ function leaderboard() {
   entries.forEach((entry, index) => {
     const row = body.insertRow();
     for (const value of [index + 1, entry.name, entry.score, entry.falls, formatTime(entry.elapsed)]) row.insertCell().textContent = value;
+    if (index < 3) row.cells[0].prepend(createPixelIcon(['gold', 'silver', 'bronze'][index]));
   });
   table.prepend(caption); content.replaceChildren(note, table);
 }
@@ -286,13 +288,19 @@ function settings() {
   const content = $('dialog-content');
   const label = document.createElement('label'); label.className = 'settings-row';
   const mute = document.createElement('input'); mute.type = 'checkbox'; mute.checked = audio.settings.muted;
-  label.append(mute, document.createTextNode('Bisukan musik dan efek suara'));
+  let speaker = createPixelIcon(mute.checked ? 'muted' : 'speaker');
+  label.classList.add('settings-mute');
+  label.append(mute, speaker, document.createTextNode('Bisukan musik dan efek suara'));
   const volumeLabel = document.createElement('label'); volumeLabel.className = 'settings-row'; volumeLabel.htmlFor = 'audio-volume';
   volumeLabel.textContent = 'Volume';
   const range = document.createElement('input'); Object.assign(range, { type: 'range', id: 'audio-volume', min: '0', max: '1', step: '0.05', value: String(audio.settings.volume) });
   const output = document.createElement('output'); output.textContent = `${Math.round(Number(range.value) * 100)}%`;
   range.addEventListener('input', () => { audio.setSettings({ volume: Number(range.value) }); output.textContent = `${Math.round(Number(range.value) * 100)}%`; });
-  mute.addEventListener('change', () => audio.setSettings({ muted: mute.checked }));
+  mute.addEventListener('change', () => {
+    audio.setSettings({ muted: mute.checked });
+    const next = createPixelIcon(mute.checked ? 'muted' : 'speaker');
+    speaker.replaceWith(next); speaker = next;
+  });
   volumeLabel.append(range, output);
   const note = document.createElement('p'); note.className = 'small-note'; note.textContent = 'Musik chiptune orisinal dibuat di perangkatmu. Audio berhenti saat permainan dijeda atau tab ditinggalkan.';
   content.replaceChildren(label, volumeLabel, note);

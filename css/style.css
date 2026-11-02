@@ -140,6 +140,10 @@ input[type=range] { width: 100%; min-height: 44px; accent-color: var(--gold); }
 .settings-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 16px 0; }
 .settings-row label { margin: 0; }
 .settings-row input[type=range] { flex: 1; min-width: 70px; }
+.pixel-icon { display: inline-block; flex-shrink: 0; vertical-align: -3px; }
+.leaderboard-table .pixel-icon { margin-right: 5px; }
+.settings-mute { justify-content: flex-start; min-height: 44px; cursor: pointer; }
+.settings-mute .pixel-icon { width: 24px; height: 24px; }
 .question-actions, .dialog-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
 .hint { background: #383624; border: 2px solid #746b3d; color: #f6e7ad; padding: 13px; font-size: 13px; line-height: 1.8; }
 #feedback { font-size: 14px; line-height: 1.8; margin-top: 18px; color: #afe59a; }
