@@ -130,8 +130,7 @@ function background(ctx, theme, p, camera, time) {
       const offset = camera * speed, start = Math.floor(offset / spacing) - 1;
       for (let i = start; i < start + 10; i++) tree(ctx, i * spacing - offset, layer ? 482 : 438, (layer ? 230 : 170) + noise(i + 33 * layer) * 100, layer ? p.near : '#49756a', layer ? '#315b4d' : '#568174', layer ? '#293f37' : '#3b655b');
     }
-    box(ctx, 0, 424, WIDTH, 6, '#7f9b77');
-    box(ctx, 0, 438, WIDTH, 4, '#638765');
+    // No horizontal foreground-like bands across pits: only collision tops read as paths.
   } else if (theme === 'cave') {
     for (let layer = 0; layer < 2; layer++) {
       const spacing = layer ? 180 : 116, offset = camera * (layer ? .38 : .16), start = Math.floor(offset / spacing) - 1;
