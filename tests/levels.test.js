@@ -179,14 +179,15 @@ test('route-aware timed jumps reach each machine and exit without teleporting or
   }
 });
 
-test('all four mandatory parkour sequences need every advertised jump and tolerate delayed polling', () => {
+test('every mandatory parkour sequence needs every advertised jump and tolerates delayed polling', () => {
+  const expectedJumps = [[2, 2, 4, 4], [3, 3, 5, 5], [3, 3, 2, 2, 2, 6, 6]];
   levels.forEach((level, index) => {
-    assert.equal(level.parkour.length, 4);
+    assert.equal(level.parkour.length, [4, 4, 7][index]);
     assert.ok(level.parkour[1].start > level.gates[1].x + level.gates[1].w);
     assert.ok(level.width >= [5200, 6200, 8400][index]);
-    assert.equal(level.parkour.reduce((count, route) => count + route.jumps.length, 0), [12, 16, 18][index]);
-    for (const [routeIndex, route] of level.parkour.entries()) {
-    assert.equal(route.jumps.length, routeIndex < 2 ? (index === 0 ? 2 : 3) : [4, 5, 6][index]);
+    assert.equal(level.parkour.reduce((count, route) => count + route.jumps.length, 0), [12, 16, 24][index]);
+    assert.deepEqual(level.parkour.map(route => route.jumps.length), expectedJumps[index]);
+    for (const route of level.parkour) {
     const checkpoint = level.checkpoints.find(cp => cp.id === route.checkpointId);
     assert.equal(checkpoint.x, route.start);
     assert.equal(checkpoint.requiresQuestion, route.requiresQuestion);
@@ -229,7 +230,9 @@ test('all four mandatory parkour sequences need every advertised jump and tolera
       assert.deepEqual(result.landings, route.jumps.map(jump => jump.landX));
     }
     for (let skip = 0; skip < route.jumps.length; skip++) {
-      assert.equal(simulate(skip).passed, false, `${level.id}: jump ${skip + 1} is mandatory`);
+      for (const delay of Array.from({ length: 16 }, (_, delay) => delay)) {
+        assert.equal(simulate(skip, delay).passed, false, `${route.id}: jump ${skip + 1} is mandatory at ${delay}px delay`);
+      }
     }
     const walker = createPlayer({ x: route.start, y: 380 });
     let fell = false;
@@ -242,7 +245,32 @@ test('all four mandatory parkour sequences need every advertised jump and tolera
   });
 });
 
-test('extended finales cross actual dynamic surfaces with delayed launches and no falls', () => {
+test('castle middle rooms require distinct routes while keeping legacy restart floors and machine rests', () => {
+  const castle = levels.find(level => level.id === 'castle');
+  const rooms = [
+    ['q9', castle.keyDoor.x + castle.keyDoor.w, 'q10', 'castle-vault', 370],
+    ['q10', 3660 + 34, 'q11', 'castle-core-spire', 330],
+    ['q11', 4500 + PLAYER_WIDTH, 'q12', 'castle-core-stride', 410],
+  ];
+  const rhythms = [];
+  for (const [requiresQuestion, after, nextQuestion, id, elevation] of rooms) {
+    const routes = castle.parkour.filter(route => route.requiresQuestion === requiresQuestion);
+    assert.equal(routes.length, 1, `${requiresQuestion}: mandatory middle route`);
+    const [route] = routes;
+    const machine = castle.gates.find(gate => gate.questionId === nextQuestion);
+    assert.equal(route.id, id);
+    assert.ok(route.start > after, 'new checkpoint follows the barrier or preserved core save');
+    assert.ok(route.end < machine.x - 60, 'finish on safe floor before terminal interaction');
+    assert.ok(machine.x - route.gap.end >= 120, 'rest floor protects legacy machine checkpoint');
+    assert.equal(route.jumps.length, 2);
+    const landing = castle.platforms.find(p => p.x === route.jumps[0].landX);
+    assert.equal(landing.y, elevation, 'each room has a distinct elevation');
+    rhythms.push(route.jumps[1].x - route.jumps[0].x);
+  }
+  assert.equal(new Set(rhythms).size, 3, 'middle rooms have different launch rhythms');
+});
+
+test('authored routes cross actual dynamic surfaces with delayed launches and no falls', () => {
   for (const level of levels) {
     for (const route of level.parkour.slice(1)) {
       for (const delay of Array.from({ length: 16 }, (_, delay) => delay)) {
