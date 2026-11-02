@@ -1,13 +1,19 @@
 import { questions } from './data/questions.js';
 import { levels } from './data/levels.js';
-import { freshState, score, levelQuestions, levelComplete, advanceLevel } from './state.js';
+import { freshState, score, levelQuestions, levelComplete, advanceLevel, collectItem } from './state.js';
 import { load, save } from './storage.js';
 import { GameEngine } from './game/engine.js';
 import { loadAssets } from './game/assets.js';
 import { createRenderer } from './game/renderer.js';
 import { showQuestion } from './ui/questions.js';
+import { GameAudio } from './game/audio.js';
+import { startMenuScene } from './game/menu-scene.js';
 
 const $ = id => document.getElementById(id);
+const audio = new GameAudio();
+let stopScene = startMenuScene($('menu-world'));
+// Web Audio may only start after a user gesture; settings never block play.
+for (const type of ['pointerdown', 'keydown']) document.addEventListener(type, () => audio.start(), { once: true });
 const loaded = load();
 let state = loaded.state;
 let engine = null;
@@ -30,12 +36,17 @@ function button(label, action, primary = true) {
   element.textContent = label; element.addEventListener('click', action); return element;
 }
 function showScreen(id) {
+  stopScene?.(); stopScene = null;
+  if (id === 'home') { stopScene = startMenuScene($('menu-world')); audio.setTheme('forest'); }
+  if (id === 'victory') stopScene = startMenuScene($('victory-world'), { victory: true });
+  document.body.dataset.screen = id;
   for (const screen of ['home', 'game', 'victory']) $(screen).hidden = screen !== id;
   window.scrollTo(0, 0);
 }
 function dialog(title, content = '', actions = []) {
   previousFocus = document.activeElement;
   engine?.setPaused(true);
+  audio.setPaused(true);
   $('question-form').onsubmit = event => event.preventDefault();
   $('question-fields').hidden = true;
   $('dialog-kicker').textContent = 'CATATAN PETUALANGAN';
@@ -46,6 +57,7 @@ function dialog(title, content = '', actions = []) {
 }
 function closeDialog() { modal.close(); }
 modal.addEventListener('close', () => {
+  audio.setPaused(document.hidden);
   if (!$('game').hidden && $('loading').hidden) { pauseRequested = false; engine?.setPaused(false); $('board').focus({ preventScroll: true }); }
   else previousFocus?.focus({ preventScroll: true });
 });
@@ -58,12 +70,13 @@ function newGame() {
 }
 function updateHud() {
   const level = levels[state.level];
-  $('chapter').textContent = `WILAYAH 0${state.level + 1} / DUNIA FUNGSI`;
+  $('chapter').textContent = `GUNDUL WARRIOR / WILAYAH 0${state.level + 1}`;
   $('level-title').textContent = level.name;
   $('level-subtitle').textContent = level.subtitle;
   $('lesson').textContent = level.lesson;
   $('score').textContent = score(state);
   $('keys').textContent = state.keys.length;
+  $('coins').textContent = state.collected?.length || 0;
   const solved = levelQuestions(state.level).filter(q => state.solved.includes(q.id)).length;
   $('map-progress').textContent = `${solved} / ${level.questionIds.length} MESIN AKTIF`;
   $('checkpoint-status').textContent = `Checkpoint: ${state.checkpoint === 'start' ? 'awal wilayah' : state.checkpoint}`;
@@ -77,6 +90,8 @@ async function enterGame() {
   pauseRequested = false;
   lastInteraction = '';
   showScreen('game'); updateHud();
+  audio.setTheme(levels[state.level].theme);
+  audio.setPaused(false);
   $('loading').hidden = false; $('retry').hidden = true;
   $('loading-text').textContent = 'Menyiapkan petualangan…';
   try {
@@ -87,8 +102,10 @@ async function enterGame() {
       canvas: $('board'), level: levels[state.level], getProgress: () => state,
       draw: createRenderer(assets).draw, onInteract: interact,
       onCheckpoint: id => { state.checkpoint = id; persist(); updateHud(); },
-      onFall: () => { lastInteraction = ''; $('interaction').textContent = 'Tidak apa-apa. Kembali ke checkpoint; skor dan jawabanmu tetap aman.'; },
+      onFall: () => { audio.play('fall'); lastInteraction = ''; $('interaction').textContent = 'Tidak apa-apa. Kembali ke checkpoint; skor dan jawabanmu tetap aman.'; },
       onFrame: updateInteraction, onPause: pause,
+      onCollect: item => { if (collectItem(state, item.id)) { persist(); updateHud(); } },
+      onEvent: name => audio.play(name === 'secret' ? 'key' : name),
     });
     engine.respawn(state.checkpoint);
     $('loading').hidden = true; engine.start();
@@ -107,6 +124,8 @@ function updateInteraction(frame) {
     $('board').dataset.playerX = Math.round(frame.player.x);
     $('board').dataset.playerY = Math.round(frame.player.y);
     $('board').dataset.paused = String(engine?.paused);
+    $('board').dataset.grounded = String(frame.player.grounded);
+    $('board').dataset.velocityY = String(Math.round(frame.player.vy));
   }
   if (!engine || modal.open) return;
   const item = engine.nearest();
@@ -128,8 +147,11 @@ function interact(item) {
   if (item.type === 'gate') {
     const gate = item.gate || item;
     const question = questions.find(q => q.id === gate.questionId);
+    const previousKeys = state.keys.length;
     showQuestion({ question, gate, state, dialog, button, persist, update: () => {
       engine.rememberCheckpoint(state.checkpoint);
+      engine.emit('machine', gate.x, gate.y + gate.h);
+      if (state.keys.length > previousKeys) engine.emit('key', gate.x - 55, gate.y + gate.h - 90);
       updateHud();
     } });
   } else if (item.type === 'exit') {
@@ -148,20 +170,57 @@ function pause() {
   if ($('game').hidden || modal.open) return;
   pauseRequested = true;
   if (!engine) return;
-  dialog('Tarik napas sebentar.', 'Perjalananmu tersimpan pada checkpoint terakhir. Semua jawaban benar tetap aman.', [button('Lanjut bermain', closeDialog), button('Kembali ke checkpoint', () => { engine.respawn(state.checkpoint); closeDialog(); }), button('Menu utama', () => { closeDialog(); home(); }, false)]);
+  dialog('Tarik napas sebentar.', 'Perjalananmu tersimpan pada checkpoint terakhir. Semua jawaban benar tetap aman.', [button('Lanjut bermain', closeDialog), button('Kembali ke checkpoint', () => { engine.respawn(state.checkpoint); closeDialog(); }), button('Pengaturan', settings, false), button('Menu utama', () => { closeDialog(); home(); }, false)]);
   persist();
 }
 function victory() {
+  audio.setPaused(false);
+  audio.play('victory');
   launchId++; engine?.stop(); engine = null; showScreen('victory');
   const firstTry = state.solved.filter(id => state.attempts[id] === 1).length;
   const wrong = Object.values(state.attempts).reduce((a, b) => a + b, 0) - state.solved.length;
-  $('final-stats').replaceChildren(...[[`${score(state)}/120`, 'Skor akhir'], [`${firstTry}/12`, 'Benar percobaan pertama'], [wrong, 'Percobaan salah'], [`${state.keys.length}/3`, 'Kunci ditemukan']].map(([value, label]) => {
+  $('final-stats').replaceChildren(...[[`${score(state)}/120`, 'Skor akhir'], [`${firstTry}/12`, 'Benar percobaan pertama'], [wrong, 'Percobaan salah'], [`${state.keys.length}/3`, 'Kunci ditemukan'], [state.collected?.length || 0, 'Kristal eksplorasi'], ['12/12', 'Mesin dipulihkan']].map(([value, label]) => {
     const div = document.createElement('div'); div.className = 'final-stat';
     const strong = document.createElement('b'); strong.textContent = value;
     const span = document.createElement('span'); span.textContent = label; div.append(strong, span); return div;
   }));
   $('replay').focus();
 }
+function settings() {
+  const inGame = !$('game').hidden;
+  dialog('Pengaturan audio', '', [button(inGame ? 'Simpan & lanjutkan' : 'Simpan & tutup', closeDialog)]);
+  const content = $('dialog-content');
+  const label = document.createElement('label'); label.className = 'settings-row';
+  const mute = document.createElement('input'); mute.type = 'checkbox'; mute.checked = audio.settings.muted;
+  label.append(mute, document.createTextNode('Bisukan musik dan efek suara'));
+  const volumeLabel = document.createElement('label'); volumeLabel.className = 'settings-row'; volumeLabel.htmlFor = 'audio-volume';
+  volumeLabel.textContent = 'Volume';
+  const range = document.createElement('input'); Object.assign(range, { type: 'range', id: 'audio-volume', min: '0', max: '1', step: '0.05', value: String(audio.settings.volume) });
+  const output = document.createElement('output'); output.textContent = `${Math.round(Number(range.value) * 100)}%`;
+  range.addEventListener('input', () => { audio.setSettings({ volume: Number(range.value) }); output.textContent = `${Math.round(Number(range.value) * 100)}%`; });
+  mute.addEventListener('change', () => audio.setSettings({ muted: mute.checked }));
+  volumeLabel.append(range, output);
+  const note = document.createElement('p'); note.className = 'small-note'; note.textContent = 'Musik chiptune orisinal dibuat di perangkatmu. Audio berhenti saat permainan dijeda atau tab ditinggalkan.';
+  content.replaceChildren(label, volumeLabel, note);
+  mute.focus();
+}
+$('fullscreen')?.addEventListener('click', async () => {
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen();
+    else notice('Browser ini tidak mendukung layar penuh. Gunakan mode landscape atau tambahkan game ke layar utama.');
+  } catch { notice('Layar penuh tidak diizinkan browser. Game tetap dapat dimainkan pada seluruh viewport.'); }
+});
+document.addEventListener('fullscreenchange', () => {
+  const toggle = $('fullscreen');
+  if (toggle) {
+    const label = document.fullscreenElement ? 'Keluar layar penuh' : 'Layar penuh';
+    toggle.title = label; toggle.setAttribute('aria-label', label);
+    toggle.setAttribute('aria-pressed', String(Boolean(document.fullscreenElement)));
+  }
+});
+$('settings').addEventListener('click', settings);
+$('game-settings').addEventListener('click', settings);
 $('start').addEventListener('click', newGame);
 $('replay').addEventListener('click', newGame);
 $('continue').disabled = !state;
@@ -173,5 +232,9 @@ $('victory-menu').addEventListener('click', home);
 $('help').addEventListener('click', () => dialog('Bekal sang petualang', 'Bergerak dengan A/D atau panah kiri/kanan. Lompat dengan Space atau panah atas. Dekati mesin, lalu tekan E atau Interaksi. Pulihkan mesin melalui soal untuk membuka gerbang dan jembatan. Bendera menyimpan checkpoint. Jatuh tidak menghapus skor. Saat soal terbuka, dunia berhenti. Komposisi f(g(x)) berarti kerjakan g dahulu, kemudian f. Di ponsel, tahan tombol arah sambil menekan Lompat.', [button('Siap berpetualang', closeDialog)]));
 $('about').addEventListener('click', () => dialog('Gundul Warrior', 'Petualangan platformer edukasi fungsi dan komposisi fungsi. Tiga wilayah, dua belas tantangan, dan satu petualang pemberani. Aset karakter berasal dari berkas yang disediakan pengguna. Lingkungan digambar secara lokal dengan Canvas. Tidak ada akun atau pengiriman data pemain. Statistik merupakan catatan latihan, bukan penilaian formal. Navigasi platformer memerlukan penglihatan; soal dan menu menggunakan HTML yang dapat diakses dengan keyboard.', [button('Tutup', closeDialog)]));
 window.addEventListener('pagehide', persist);
-window.addEventListener('blur', () => { persist(); pause(); });
-document.addEventListener('visibilitychange', () => { if (document.hidden) { persist(); pause(); } });
+window.addEventListener('blur', () => { audio.setPaused(true); persist(); pause(); });
+window.addEventListener('focus', () => { if (!modal.open && $('game').hidden) audio.setPaused(false); });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { audio.setPaused(true); persist(); pause(); }
+  else if (!modal.open) audio.setPaused(false);
+});
