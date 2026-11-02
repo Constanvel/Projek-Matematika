@@ -106,7 +106,7 @@ async function enterGame() {
       onFall: () => { audio.play('fall'); lastInteraction = ''; fallNoticeUntil = performance.now() + 2200; $('game').dataset.contextual = 'true'; $('interaction').textContent = 'Tidak apa-apa. Kembali ke checkpoint; skor dan jawabanmu tetap aman.'; },
       onFrame: updateInteraction, onPause: pause,
       onCollect: item => { if (collectItem(state, item.id)) { persist(); updateHud(); } },
-      onEvent: name => audio.play(name === 'secret' ? 'key' : name),
+      onEvent: name => audio.play(name === 'secret' ? 'key' : name === 'spring' ? 'jump' : name),
     });
     engine.respawn(state.checkpoint);
     $('loading').hidden = true; engine.start();
