@@ -1,5 +1,12 @@
 import { getMachineFlow } from '../data/machines.js';
 import { drawPixelCharacter } from './pixel-character.js';
+import { planWorldLabels, visibleWorldPanels } from './world-labels.js';
+
+const labelLayouts = new WeakMap();
+const labelsFor = level => {
+  if (!labelLayouts.has(level)) labelLayouts.set(level, planWorldLabels(level));
+  return labelLayouts.get(level);
+};
 
 const WIDTH = 960;
 const HEIGHT = 540;
@@ -337,24 +344,16 @@ function checkpoint(ctx, item, active, locked, time, p) {
   const wave = Math.floor(Math.sin(time * 3 + x) * 2) * 2;
   polygon(ctx, [[x + 4, floor - 68], [x + 34, floor - 66 + wave], [x + 30, floor - 54], [x + 36, floor - 44 + wave], [x + 4, floor - 46]], locked ? '#697481' : active ? '#d8ae62' : '#618f82');
   box(ctx, x + 8, floor - 64, 4, 16, locked ? '#8d9a9c' : active ? '#f4d797' : '#94b9a0');
-  if (active) { sparkle(ctx, x, floor - 76, p.light, 4); label(ctx, 'TERSIMPAN', x, floor - 96, p); }
+  if (active) sparkle(ctx, x, floor - 76, p.light, 4);
   else box(ctx, x - 4, floor - 76, 8, 6, locked ? p.stone : p.accent);
 }
-function sign(ctx, item, p) {
-  const lines = [''];
-  for (const word of normalized(item.text).split(' ')) {
-    const last = lines.length - 1;
-    if (lines[last] && `${lines[last]} ${word}`.length > 19) lines.push(word);
-    else lines[last] += `${lines[last] ? ' ' : ''}${word}`;
-  }
-  const width = Math.max(...lines.map(value => textWidth(value))) + 20;
-  const height = lines.length * 20 + 10, x = item.x, y = item.y ?? 432 - height;
-  box(ctx, x - 4, y + height, 8, 450 - y - height, '#514638');
-  box(ctx, x - 2, y + height, 2, 450 - y - height, '#8d7250');
-  panel(ctx, x - width / 2, y, width, height, '#393d37', '#9b865b');
-  box(ctx, x - width / 2 + 4, y + 4, 2, 2, '#cfb57e');
-  box(ctx, x + width / 2 - 6, y + height - 6, 2, 2, '#cfb57e');
-  lines.forEach((value, index) => text(ctx, value, x, y + 14 + index * 20, '#e5d8aa'));
+function worldPanel(ctx, entry, p) {
+  const { x, y, w, h } = entry.bounds;
+  // Floating plaques have no long posts that could masquerade as solid terrain.
+  panel(ctx, x, y, w, h, entry.kind === 'sign' ? '#393d37' : p.dark, '#9b865b');
+  box(ctx, x + 4, y + 4, 2, 2, '#cfb57e');
+  box(ctx, x + w - 6, y + h - 6, 2, 2, '#cfb57e');
+  entry.lines.forEach((value, index) => text(ctx, value, x + w / 2, y + 14 + index * 20, '#e5d8aa'));
 }
 function chest(ctx, exit, ready, player, p, time, opened = false) {
   const x = exit.x, floor = exit.y + 70;
@@ -498,12 +497,9 @@ export function createRenderer(assets) {
         for (const item of level.gates || []) if (item.bridge && solved.has(item.questionId)) platform(world, item.bridge, level.theme, p, camera, true, phaseFor(item.questionId));
         decorations(world, level, p, camera, animatedTime);
         for (const item of level.collectibles || []) if (visible(item.x - 30, 60, camera)) collectible(world, item, animatedTime, p, collected.has(item.id));
-        for (const item of level.signs || []) {
-          const nearMachine = (level.gates || []).some(g => Math.abs(g.x - item.x) < 180
-            || (Math.abs(g.x - (player.x + player.w / 2)) < 180 && Math.abs(g.x - item.x) < 350));
-          if (!nearMachine && visible(item.x - 220, 440, camera)) sign(world, item, p);
-        }
-        for (const item of level.checkpoints || []) if (visible(item.x - 70, 140, camera)) checkpoint(world, item, progress.checkpoint === item.id, (item.requiresKeys || 0) > keys || Boolean(item.requiresQuestion && !solved.has(item.requiresQuestion)), animatedTime, p);
+        const layout = labelsFor(level);
+        for (const entry of visibleWorldPanels(layout, { camera: snap(camera), player, checkpoint: progress.checkpoint })) worldPanel(world, entry, p);
+        for (const item of layout.flags) if (visible(item.x - 70, 140, camera)) checkpoint(world, item, item.members.includes(progress.checkpoint), (item.requiresKeys || 0) > keys || Boolean(item.requiresQuestion && !solved.has(item.requiresQuestion)), animatedTime, p);
         for (const item of level.gates || []) if (visible(item.x - 250, 400, camera)) gate(world, item, solved.has(item.questionId), player, animatedTime, p, level, phaseFor(item.questionId));
         if (level.keyDoor && visible(level.keyDoor.x - 150, 330, camera)) keyDoor(world, level.keyDoor, keys, p, animatedTime, phaseFor('keyDoor'));
         if (level.exit && visible(level.exit.x - 150, 300, camera)) chest(world, level.exit, (level.questionIds || []).every(id => solved.has(id)), player, p, animatedTime, Boolean(progress.completed || frame.victory));
