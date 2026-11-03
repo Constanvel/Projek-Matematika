@@ -1,0 +1,188 @@
+{
+  "licenseStatus": "unverified-user-supplied",
+  "icons": {
+    "heart-full": {
+      "archive": "Nyawa/IMG_7688.zip",
+      "entry": "IMG_7688.png",
+      "sourceSha256": "7865edbf83c5fd7822bf64518319a80978baeb43a5bb19ea0b31dedc1092867c",
+      "crop": [
+        78,
+        90,
+        257,
+        244
+      ],
+      "size": [
+        16,
+        16
+      ],
+      "sha256": "29da999eb4dc9e2a47f5f8d405e43c14c74b2a56cc5e64059ef48222a8399bd6"
+    },
+    "heart-empty": {
+      "archive": "Nyawa/IMG_7688.zip",
+      "entry": "IMG_7688.png",
+      "sourceSha256": "7865edbf83c5fd7822bf64518319a80978baeb43a5bb19ea0b31dedc1092867c",
+      "crop": [
+        438,
+        90,
+        622,
+        244
+      ],
+      "size": [
+        16,
+        16
+      ],
+      "sha256": "129c41d7b880d6c4baec90c43711d4974f0a280b292e07661afc03d0a0050ebf"
+    },
+    "gold": {
+      "archive": "aset leaderboard dll.zip",
+      "entry": "medali emas.png",
+      "sourceSha256": "069b307a6bc93dde7269b2b39e535de0523a78f1a994381ece9aebd14d56ca8a",
+      "crop": null,
+      "size": [
+        32,
+        32
+      ],
+      "sha256": "eb30dcdd0af91aab0835bbfb7d6a675a9d2382645e9e7df1c8d7367905ec20aa"
+    },
+    "silver": {
+      "archive": "aset leaderboard dll.zip",
+      "entry": "medali perak.png",
+      "sourceSha256": "2eca4945d3618d4ddca249864b1fc56e3931ea024a9941803eaa43f3cf40584e",
+      "crop": null,
+      "size": [
+        32,
+        32
+      ],
+      "sha256": "9ff32815bffc65ae65f2048e0a8be55154fc518e70e0a3dcd7cfb8d7bb9bac44"
+    },
+    "bronze": {
+      "archive": "aset leaderboard dll.zip",
+      "entry": "medali perunggu.png",
+      "sourceSha256": "75f01a69f7f1236713f79780b4c5455999f4e443ee9cabb1cd9ae32c4e193a87",
+      "crop": null,
+      "size": [
+        32,
+        32
+      ],
+      "sha256": "ada43ed351b2e79afd4f02385a2f8fbc10b6e1970422360d11dadd849c2018f3"
+    },
+    "speaker": {
+      "archive": "tombol dll/IMG_7715.zip",
+      "entry": "IMG_7716.png",
+      "sourceSha256": "6391864bd0d543edee35267453da46be53892ac88b3a7a551044d86e1986805a",
+      "crop": null,
+      "size": [
+        32,
+        32
+      ],
+      "sha256": "315094c7097369bbfba053ca876a70dc88ce4aa330810e436e3d94f307f3e1e2"
+    },
+    "muted": {
+      "archive": "tombol dll/IMG_7715.zip",
+      "entry": "IMG_7717.png",
+      "sourceSha256": "f95ee385619d033a18fa79b78ede9844feb0bec7bf127666cd4e4ba9f00392d9",
+      "crop": null,
+      "size": [
+        32,
+        32
+      ],
+      "sha256": "5ff31c8a5b1efaeaaf945bcf3afeedce328c608409d16485e81163d5ef6183b5"
+    },
+    "play": {
+      "archive": "tombol dll/IMG_7709.zip",
+      "entry": "IMG_7709.png",
+      "sourceSha256": "b43c453554e2cb9feec7d1e7f97ff5d18cbcd3ab6470ef4ed3fec014bc441863",
+      "crop": [
+        123,
+        65,
+        220,
+        176
+      ],
+      "size": [
+        32,
+        32
+      ],
+      "sha256": "37f43bbd361a6e8387565871b4678214b1caf098fe9764618e7957290ac2978c"
+    },
+    "settings": {
+      "archive": "tombol dll/IMG_7709.zip",
+      "entry": "IMG_7710.png",
+      "sourceSha256": "21865fe7c3faa119e5d6e438f2574d933c79f34944b7fca7d7e335626b1b5984",
+      "crop": [
+        64,
+        55,
+        182,
+        175
+      ],
+      "size": [
+        32,
+        32
+      ],
+      "sha256": "a825f8387ff9482fc6c28f427458075804104f83ddda89a567b91372e730b94e"
+    },
+    "back": {
+      "archive": "tombol dll/IMG_7709.zip",
+      "entry": "IMG_7712.png",
+      "sourceSha256": "9e47f91f4510ca1cdccf398428b5a5348d2d33f0115c853c388831e3b5f16766",
+      "crop": [
+        98,
+        38,
+        217,
+        142
+      ],
+      "size": [
+        32,
+        32
+      ],
+      "sha256": "3dfa4e35375264d812fd946e05b4f9e24140ff86d720ce4193fcb9bcc186af87"
+    },
+    "leaderboard": {
+      "archive": "tombol dll/IMG_7715.zip",
+      "entry": "IMG_7714.png",
+      "sourceSha256": "b573563556bb1b61730c5f1f0833e65c6e353a87bcb92f6bded7fdad3eadcd1a",
+      "crop": [
+        49,
+        27,
+        179,
+        145
+      ],
+      "size": [
+        32,
+        32
+      ],
+      "sha256": "22de1b5a27db480ce1ff45686a63fe008e365bab3f447785e2d522c104b728e6"
+    },
+    "music": {
+      "archive": "tombol dll/IMG_7715.zip",
+      "entry": "IMG_7713.png",
+      "sourceSha256": "44b989d3841a1dc5f2b6b300f73e947fc63e1f7b7d3ac9e7d8ab71239ea6e039",
+      "crop": [
+        77,
+        29,
+        184,
+        142
+      ],
+      "size": [
+        32,
+        32
+      ],
+      "sha256": "e77511f6eac49fc516450c9b14a87b9b6423b2b646d5f05d727059f46beba307"
+    },
+    "home": {
+      "archive": "tombol dll/IMG_7715.zip",
+      "entry": "IMG_7715.png",
+      "sourceSha256": "b62f621caf998b512bfb8ab93fd9711a4ca023ac5a32a4d0ebefe43636abdae6",
+      "crop": [
+        78,
+        25,
+        199,
+        146
+      ],
+      "size": [
+        32,
+        32
+      ],
+      "sha256": "782737c3cf18cac2b671decb99e45b048c05808cb1bf10ae835fc7e91e0ce356"
+    }
+  }
+}

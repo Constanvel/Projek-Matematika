@@ -12,6 +12,12 @@ import { startMenuScene } from './game/menu-scene.js';
 import { loadRun, saveRun, resetRun, takeFall, getLeaderboard, recordVictory } from './game/run-records.js';
 
 const $ = id => document.getElementById(id);
+for (const [id, name] of [['start', 'play'], ['continue', 'play'], ['settings', 'settings'],
+  ['game-settings', 'settings'], ['leaderboard', 'leaderboard'], ['victory-leaderboard', 'leaderboard'],
+  ['victory-menu', 'home'], ['replay', 'play']]) {
+  $(id).prepend(createPixelIcon(name));
+  $(id).classList.add('icon-button');
+}
 const audio = new GameAudio();
 let stopScene = startMenuScene($('menu-world'));
 // Web Audio may only start after a user gesture; settings never block play.
@@ -40,10 +46,12 @@ function persist() {
   if (!save(state)) notice('Penyimpanan tidak tersedia. Game tetap berjalan, tetapi progres belum tersimpan.');
   $('continue').disabled = false;
 }
-function button(label, action, primary = true) {
+function button(label, action, primary = true, icon) {
   const element = document.createElement('button');
   element.type = 'button'; element.className = `button ${primary ? 'primary' : 'secondary'}`;
-  element.textContent = label; element.addEventListener('click', action); return element;
+  element.textContent = label;
+  if (icon) { element.prepend(createPixelIcon(icon)); element.classList.add('icon-button'); }
+  element.addEventListener('click', action); return element;
 }
 function showScreen(id) {
   stopScene?.(); stopScene = null;
@@ -102,6 +110,8 @@ function updateHud() {
   $('keys').textContent = state.keys.length;
   $('coins').textContent = state.collected?.length || 0;
   $('health').textContent = `${run.health}/${run.maxHealth}`;
+  $('health-hearts').replaceChildren(...Array.from({ length: run.maxHealth }, (_, index) =>
+    createPixelIcon(index < run.health ? 'heart-full' : 'heart-empty')));
   $('health-status').setAttribute('aria-label', `Health ${run.health} dari ${run.maxHealth}`);
   $('health-status').dataset.low = String(run.health === 1);
   const solved = levelQuestions(state.level).filter(q => state.solved.includes(q.id)).length;
@@ -221,7 +231,7 @@ function pause() {
   if ($('game').hidden || modal.open) return;
   pauseRequested = true;
   if (!engine) return;
-  dialog('Tarik napas sebentar.', 'Perjalananmu tersimpan pada checkpoint terakhir. Semua jawaban benar tetap aman.', [button('Lanjut bermain', closeDialog), button('Kembali ke checkpoint', () => { engine.respawn(state.checkpoint); closeDialog(); }), button('Pengaturan', settings, false), button('Menu utama', () => { closeDialog(); home(); }, false)]);
+  dialog('Tarik napas sebentar.', 'Perjalananmu tersimpan pada checkpoint terakhir. Semua jawaban benar tetap aman.', [button('Lanjut bermain', closeDialog, true, 'play'), button('Kembali ke checkpoint', () => { engine.respawn(state.checkpoint); closeDialog(); }, true, 'back'), button('Cara bermain', help, false), button('Pengaturan', settings, false, 'settings'), button('Menu utama', () => { closeDialog(); home(); }, false, 'home')]);
   persist();
 }
 function victory() {
@@ -242,7 +252,7 @@ function victory() {
   $('replay').focus();
 }
 function leaderboard() {
-  dialog('Leaderboard lokal', '', [button('Tutup', closeDialog)]);
+  dialog('Leaderboard lokal', '', [button('Tutup', closeDialog, true, 'back')]);
   const content = $('dialog-content');
   const note = document.createElement('p'); note.className = 'leaderboard-note';
   note.textContent = '10 hasil tamat di browser ini. Urutan: skor tertinggi, jatuh tersedikit, lalu waktu aktif tercepat. Tidak tersinkron lintas perangkat.';
@@ -294,6 +304,7 @@ function settings() {
   const volumeRows = [['volume', 'audio-volume', 'Volume utama'], ['musicVolume', 'music-volume', 'Musik'], ['effectsVolume', 'effects-volume', 'Efek suara']].map(([key, id, title]) => {
     const row = document.createElement('div'); row.className = 'settings-row settings-volume';
     const label = document.createElement('label'); label.htmlFor = id; label.textContent = title;
+    if (key === 'musicVolume') label.prepend(createPixelIcon('music'));
     const range = document.createElement('input'); Object.assign(range, { type: 'range', id, min: '0', max: '1', step: '0.05', value: String(audio.settings[key]) });
     const output = document.createElement('output'); output.htmlFor = id;
     output.textContent = `${Math.round(Number(range.value) * 100)}%`;
@@ -340,7 +351,24 @@ $('retry').addEventListener('click', enterGame);
 $('pause').addEventListener('click', pause);
 $('interact').addEventListener('click', () => { if (!modal.open) interact(); });
 $('victory-menu').addEventListener('click', home);
-$('help').addEventListener('click', () => dialog('Bekal sang petualang', 'Bergerak dengan A/D atau panah kiri/kanan. Lompat dengan Space atau panah atas. Dekati mesin, lalu tekan E atau Interaksi. Pulihkan mesin melalui soal untuk membuka gerbang dan jembatan. Bendera menyimpan checkpoint. Setelah mesin pertama dan kedua tiap wilayah, baca petunjuk dan seberangi rangkaian parkour wajib: tahan lompat untuk menjangkau pijakan, lepaskan lalu tekan lagi setelah mendarat. Tiga health tersedia; setiap jatuh mengurangi satu. Saat habis, health pulih di checkpoint tanpa menghapus skor atau jawaban. Leaderboard lokal mencatat skor, jumlah jatuh, dan waktu aktif; waktu berhenti saat jeda atau soal terbuka. Komposisi f(g(x)) berarti kerjakan g dahulu, kemudian f. Di ponsel, tahan tombol arah sambil menekan Lompat.', [button('Siap berpetualang', closeDialog)]));
+function help() {
+  const inGame = !$('game').hidden;
+  dialog('Bekal sang petualang', '', [button(inGame ? 'Lanjut bermain' : 'Siap berpetualang', closeDialog, true, 'play')]);
+  const sections = [
+    ['Bergerak dan berinteraksi', 'A/D atau panah kiri/kanan untuk berjalan. Space, W, atau panah atas untuk melompat. Tahan lompat untuk menjangkau pijakan tinggi, lepaskan lalu tekan lagi setelah mendarat. Di ponsel, tahan arah sambil menekan Lompat. Dekati mesin atau peti, lalu tekan E atau tombol Interaksi.'],
+    ['Mekanik tiap wilayah', 'Akar pegas di hutan memberi dorongan saat kamu menekan lompat. Es licin di gua: lepas arah lebih awal atau tekan arah berlawanan untuk mengerem. Batu retak di kastel runtuh setelah diinjak; teruskan lompatan, lalu tunggu sampai pijakan pulih jika perlu.'],
+    ['Mesin, kunci, dan checkpoint', 'Jawaban benar memulihkan mesin serta membuka gerbang atau jembatan. Tiga mesin utama tiap wilayah memberi satu kunci; tiga kunci membuka ruang harta. Pulihkan semua 12 mesin dan buka peti terakhir. Bendera serta mesin yang selesai menyimpan checkpoint. Mesin aktif dapat ditinjau lagi. Komposisi f(g(x)) berarti kerjakan g dahulu, kemudian f.'],
+    ['Nyawa dan catatan perjalanan', 'Tiga hati menunjukkan sisa nyawa. Setiap jatuh mengurangi satu; saat habis, tiga nyawa pulih di checkpoint. Jawaban salah tidak mengurangi nyawa. Skor dan jawaban tetap aman ketika jatuh. Koin dan jalur rahasia bersifat opsional. Leaderboard lokal menyimpan skor, jumlah jatuh, dan waktu aktif; waktu berhenti saat jeda atau soal terbuka.'],
+  ];
+  const guide = document.createElement('div'); guide.className = 'play-guide';
+  for (const [title, text] of sections) {
+    const heading = document.createElement('h3'); heading.textContent = title;
+    const paragraph = document.createElement('p'); paragraph.textContent = text;
+    guide.append(heading, paragraph);
+  }
+  $('dialog-content').replaceChildren(guide);
+}
+$('help').addEventListener('click', help);
 $('about').addEventListener('click', () => dialog('Gundul Warrior', 'Petualangan platformer edukasi fungsi dan komposisi fungsi. Tiga wilayah, dua belas tantangan, dan satu petualang pemberani. Karakter pixel baru mempertahankan identitas aset pengguna; sumber asli tetap disimpan. Lingkungan, animasi, musik chiptune, dan efek dibuat secara lokal dengan Canvas serta Web Audio. Tidak ada akun atau pengiriman data pemain. Statistik merupakan catatan latihan, bukan penilaian formal. Navigasi platformer memerlukan penglihatan; soal dan menu menggunakan HTML yang dapat diakses dengan keyboard.', [button('Tutup', closeDialog)]));
 window.addEventListener('pagehide', persist);
 window.addEventListener('blur', () => { audio.setPaused(true); persist(); pause(); });

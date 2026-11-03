@@ -24,8 +24,8 @@
         <p class="hero-tagline">Kepala boleh gundul.<br><strong>Nyali jangan.</strong></p>
         <p class="hero-description">Lompati rintangan, kumpulkan koin, dan pulihkan mesin kuno dengan kekuatan matematika.</p>
         <nav class="menu-actions" aria-label="Menu utama">
-          <button id="start" class="button primary menu-start">Mulai petualangan <span aria-hidden="true">▶</span></button>
-          <button id="continue" class="button secondary menu-continue" disabled>Lanjutkan <span aria-hidden="true">↪</span></button>
+          <button id="start" class="button primary menu-start">Mulai petualangan</button>
+          <button id="continue" class="button secondary menu-continue" disabled>Lanjutkan</button>
           <button id="help" class="button secondary">Cara bermain</button>
           <button id="settings" class="button secondary">Pengaturan</button>
           <button id="leaderboard" class="button secondary">Leaderboard</button>
@@ -49,7 +49,7 @@
     <section id="game" hidden aria-labelledby="level-title">
       <div class="game-heading"><div><p id="chapter" class="eyebrow"></p><h1 id="level-title"></h1><p id="level-subtitle"></p></div><div class="game-heading-actions"><button id="game-settings" class="button secondary" aria-label="Pengaturan permainan">Pengaturan</button><button id="pause" class="button secondary">Jeda <kbd>Esc</kbd></button></div></div>
       <div class="game-shell">
-        <div class="hud"><span class="hud-mission" id="mission">PULIHKAN MESIN FUNGSI</span><div><span id="health-status" aria-label="Health 3 dari 3"><svg class="health-icon" viewBox="0 0 16 14" aria-hidden="true"><path d="M2 0h4v2h4V0h4v2h2v6h-2v2h-2v2h-2v2H6v-2H4v-2H2V8H0V2h2z" fill="currentColor"/></svg><b id="health">3/3</b></span><span><i class="coin-icon" aria-hidden="true"></i> KOIN <b id="coins">0</b></span><span>SKOR <b id="score">0</b><small>/120</small></span><span>KUNCI <b id="keys">0</b><small>/3</small></span></div></div>
+        <div class="hud"><span class="hud-mission" id="mission">PULIHKAN MESIN FUNGSI</span><div><span id="health-status" aria-label="Health 3 dari 3"><span id="health-hearts" aria-hidden="true"></span><b id="health">3/3</b></span><span><i class="coin-icon" aria-hidden="true"></i> KOIN <b id="coins">0</b></span><span>SKOR <b id="score">0</b><small>/120</small></span><span>KUNCI <b id="keys">0</b><small>/3</small></span></div></div>
         <div class="viewport"><canvas id="board" width="960" height="540" tabindex="0" aria-label="Dunia permainan. A dan D untuk bergerak, Space untuk melompat, E untuk interaksi. Permainan membutuhkan penglihatan untuk navigasi.">Browser ini tidak mendukung Canvas. Gunakan browser modern.</canvas><div id="loading" class="loading" hidden><span class="loading-sprite" aria-hidden="true"></span><p id="loading-text">Menyiapkan petualangan…</p><button id="retry" class="button primary" hidden>Coba lagi</button></div></div>
         <div class="game-bottom"><p id="interaction" role="status">Ikuti jalan menuju mesin pertama.</p><button id="interact" class="button primary" data-control="interact">Interaksi <kbd>E</kbd></button></div>
         <div class="touch-controls" aria-label="Kontrol sentuh"><div><button data-control="left" aria-label="Bergerak kiri">←</button><button data-control="right" aria-label="Bergerak kanan">→</button></div><button data-control="jump" class="jump" aria-label="Melompat">Lompat ↑</button></div>

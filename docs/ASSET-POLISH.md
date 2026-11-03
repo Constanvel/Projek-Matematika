@@ -1,5 +1,10 @@
 # Polesan visual dan audio — 3 November 2026
 
+Catatan ini merekam polesan awal. Tindak lanjut pengguna memakai ikon dari ZIP
+dicatat dalam [Ikon unduhan dan keterlihatan mekanik](UI-ASSETS.md); ikon UI
+runtime kini mengikuti dokumen tersebut. Status lisensi sumber tetap belum
+terverifikasi. Batas dan hasil uji di bawah adalah kondisi polesan awal.
+
 Implementasi mengikuti audit aset yang disetujui pengguna. Sasaran: lingkungan
 lebih beragam, UI kecil lebih jelas, dan musik kurang repetitif, dengan identitas
 Gundul serta aturan permainan tetap sama.

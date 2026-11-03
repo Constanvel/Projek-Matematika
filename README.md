@@ -10,6 +10,8 @@ Platformer edukasi 2D side-scrolling berbahasa Indonesia. Bergerak ke kiri–kan
 
 [Catatan polesan aset](docs/ASSET-POLISH.md) menjelaskan variasi kanopi hutan, air terjun di dinding gua, lapisan arsitektur kastel, ikon pixel orisinal, serta batas penggunaan kandidat unduhan yang lisensinya belum terverifikasi. Semua perubahan tersebut memakai geometri level dan progres belajar yang sama.
 
+[Ikon unduhan dan keterlihatan mekanik](docs/UI-ASSETS.md) mencatat tindak lanjut: ikon tombol, speaker, medali, dan tiga hati dari ZIP pengguna, termasuk pengolahan pixel, asal file, dan status lisensi. Panduan mekanik wilayah juga tersedia melalui menu jeda.
+
 Menu merupakan overlay di atas dunia, bukan halaman promosi. Permainan memenuhi viewport tanpa memotong rasio medan. Pada ponsel portrait, letterbox menjaga seluruh lebar kamera terlihat dan menyediakan ruang kontrol. Tombol **Layar penuh** menyembunyikan antarmuka browser jika Fullscreen API diizinkan; jika tidak, game tetap mengisi viewport.
 
 ## Menjalankan
@@ -26,7 +28,7 @@ Buka http://localhost:4173. Server hanya untuk pengembangan lokal. Tidak perlu `
 
 Proyek Vercel `projek-matematika` terhubung ke branch produksi `main`. `vercel.json` memilih preset Other dan menjalankan `npm run build`, lalu menyajikan folder `dist` sebagai situs statis. `server.js` hanya dipakai saat pengembangan lokal.
 
-Build menyalin `index.html`, `css`, `js`, dan atlas pixel karakter yang dipakai saat bermain. Dokumen, pengujian, gambar sumber karakter, serta dependensi tidak masuk hasil build. Jalankan `npm run build` untuk memeriksanya secara lokal. Setelah perubahan di-push ke `main`, tunggu deployment Vercel berstatus Ready dan periksa https://projek-matematika.vercel.app.
+Build menyalin `index.html`, `css`, `js`, atlas pixel karakter, dan sprite UI di `assets/ui`. Dokumen, pengujian, gambar sumber karakter, serta dependensi tidak masuk hasil build. Jalankan `npm run build` untuk memeriksanya secara lokal. Setelah perubahan di-push ke `main`, tunggu deployment Vercel berstatus Ready dan periksa https://projek-matematika.vercel.app.
 
 ## Cara bermain
 
@@ -87,7 +89,7 @@ js/game/run-records.js         Health, run aktif, dan leaderboard lokal terpisah
 js/game/pixel-character.js     Sprite pixel turunan dan tujuh jenis animasi
 js/game/menu-scene.js          Pemandangan menu/kemenangan
 js/game/audio.js               Musik chiptune dan efek Web Audio orisinal
-js/ui/pixel-icons.js           Medali peringkat dan ikon speaker pixel orisinal
+js/ui/pixel-icons.js           Ikon PNG unduhan dengan teks dan fallback aman
 js/game/assets.js              Preload atlas pixel lokal dan pemulihan gagal muat
 js/ui/questions.js             Soal, petunjuk, pembahasan
 js/data/levels.js              Geometri dan objek tiga wilayah
@@ -99,6 +101,8 @@ assets/character/original/     PNG asli dari ZIP pengguna
 assets/character/processed/    PNG RGBA transparan, anchor seragam
 assets/character/manifest.json Metadata dan hash aset
 scripts/prepare-character.py  Persiapan aset reproducible
+scripts/prepare-ui-icons.py   Crop dan normalisasi ikon dari ZIP pengguna
+assets/ui/                    13 ikon transparan dan manifest asalnya
 ```
 
 Simulasi berjalan pada 1/60 detik; rendering memakai requestAnimationFrame. Ada coyote time 100 ms, jump buffer 120 ms, dan variable jump. Collision terpisah dari gambar. Canvas menggunakan koordinat logis 960×540; kamera horizontal dibatasi ukuran dunia.

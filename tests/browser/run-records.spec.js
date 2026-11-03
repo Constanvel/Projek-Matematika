@@ -51,10 +51,13 @@ test('three live falls restore health without losing progress; reload and pause 
   await continueGame(page);
   await expect(page.locator('#board')).toHaveAttribute('data-player-x', String(route.start));
   await expect(page.locator('#health')).toHaveText('3/3');
+  await expect(page.locator('#health-status [data-icon="heart-full"]')).toHaveCount(3);
 
   for (let falls = 1; falls <= 3; falls++) {
     await walkIntoFall(page, falls);
     await expect(page.locator('#health')).toHaveText(falls === 3 ? '3/3' : `${3 - falls}/3`);
+    await expect(page.locator('#health-status [data-icon="heart-full"]')).toHaveCount(falls === 3 ? 3 : 3 - falls);
+    await expect(page.locator('#health-status [data-icon="heart-empty"]')).toHaveCount(falls === 3 ? 0 : falls);
     const saved = await readStored(page, STATE_KEY);
     expect(saved.solved).toEqual(state.solved);
     expect(saved.attempts).toEqual(state.attempts);
@@ -70,6 +73,8 @@ test('three live falls restore health without losing progress; reload and pause 
       await page.reload();
       await continueGame(page);
       await expect(page.locator('#health')).toHaveText('1/3');
+      await expect(page.locator('#health-status [data-icon="heart-full"]')).toHaveCount(1);
+      await expect(page.locator('#health-status [data-icon="heart-empty"]')).toHaveCount(2);
       expect((await readStored(page, RUN_KEY)).falls).toBe(2);
       await expect(page.locator('#board')).toHaveAttribute('data-player-x', String(route.start));
     }
@@ -159,7 +164,11 @@ test('victory records safe names in rank order once and a new game preserves the
     ['4', 'Slower', '120', '4', '2:20'],
     ['5', 'Lower score', '110', '0', '0:01'],
   ]);
-  await expect(page.locator('#dialog-content img, #dialog-content script')).toHaveCount(0);
+  // Decorative rank images are allowed; a player's name must remain plain text.
+  await expect(page.locator('.leaderboard-table td:nth-child(2) img, #dialog-content script')).toHaveCount(0);
+  await expect(page.locator('#dialog-content img')).toHaveCount(3);
+  expect(await page.locator('#dialog-content img').evaluateAll(images => images.every(image =>
+    new URL(image.src).pathname.startsWith('/assets/ui/') && ['gold', 'silver', 'bronze'].includes(image.dataset.icon)))).toBe(true);
   await page.screenshot({ path: 'test-results/run-leaderboard-desktop.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({ path: 'test-results/run-leaderboard-portrait.png', fullPage: true });

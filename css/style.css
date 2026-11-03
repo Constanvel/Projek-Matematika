@@ -140,10 +140,10 @@ input[type=range] { width: 100%; min-height: 44px; accent-color: var(--gold); }
 .settings-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 16px 0; }
 .settings-row label { margin: 0; }
 .settings-row input[type=range] { flex: 1; min-width: 70px; }
-.pixel-icon { display: inline-block; flex-shrink: 0; vertical-align: -3px; }
+.pixel-icon { display: inline-block; flex-shrink: 0; vertical-align: middle; width: 32px; height: 32px; object-fit: contain; image-rendering: pixelated; }
 .leaderboard-table .pixel-icon { margin-right: 5px; }
 .settings-mute { justify-content: flex-start; min-height: 44px; cursor: pointer; }
-.settings-mute .pixel-icon { width: 24px; height: 24px; }
+.settings-mute .pixel-icon { width: 32px; height: 32px; }
 .settings-volume label { width: 100px; flex-shrink: 0; font-size: 13px; }
 .settings-volume output { min-width: 40px; text-align: right; font-size: 13px; font-variant-numeric: tabular-nums; }
 .settings-volume input { min-height: 44px; }
@@ -241,7 +241,24 @@ main { width: 100%; max-width: none; height: 100dvh; margin: 0; padding: 0; }
   #game .game-bottom { max-width: calc(100% - 240px); left: 70px; bottom: 8px; }
   #game .game-bottom p { font-size: 11px; }
 }
-.health-icon { width: 13px; height: 12px; color: #f18e93; vertical-align: -1px; }
+.icon-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.menu-actions .menu-start, .menu-actions .menu-continue { justify-content: flex-start; }
+.menu-actions .menu-start { background: #286c39; border-color: #a2df83 #164329 #164329 #a2df83; color: #fff4c8; }
+.menu-actions .menu-start:hover:not(:disabled) { background: #358147; }
+.game-heading .pixel-icon { width: 16px; height: 16px; }
+.settings-volume label .pixel-icon { width: 16px; height: 16px; margin-right: 4px; }
+#health-status, #health-hearts { display: inline-flex; align-items: center; }
+#health-hearts { gap: 1px; }
+#health-hearts .pixel-icon { width: 16px; height: 16px; }
+.play-guide h3 { font: bold 12px/1.6 var(--display); margin: 20px 0 7px; color: var(--gold); }
+.play-guide h3:first-child { margin-top: 0; }
+.play-guide p { margin-bottom: 16px; line-height: 1.7; }
+@media (max-width: 600px) {
+  .menu-actions .icon-button { gap: 5px; }
+  .menu-actions .icon-button .pixel-icon { width: 32px; height: 32px; }
+  .game-heading .icon-button { gap: 4px; }
+  .dialog-actions .icon-button .pixel-icon { width: 16px; height: 16px; }
+}
 #health-status[data-low="true"] b { color: #ffacac; }
 #game .hud > div { gap: 11px; }
 .record-form { width: min(460px, 100%); margin: 0 0 18px; text-align: left; }
