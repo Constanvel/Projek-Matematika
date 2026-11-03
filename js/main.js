@@ -9,7 +9,7 @@ import { showQuestion } from './ui/questions.js';
 import { createPixelIcon } from './ui/pixel-icons.js';
 import { GameAudio } from './game/audio.js';
 import { startMenuScene } from './game/menu-scene.js';
-import { loadRun, saveRun, resetRun, takeFall, getLeaderboard, recordVictory } from './game/run-records.js';
+import { loadRun, saveRun, resetRun, takeFall, retryRun, getLeaderboard, recordVictory } from './game/run-records.js';
 
 const $ = id => document.getElementById(id);
 for (const [id, name] of [['start', 'play'], ['continue', 'play'], ['settings', 'settings'],
@@ -67,14 +67,25 @@ function dialog(title, content = '', actions = []) {
   audio.setPaused(true);
   $('question-form').onsubmit = event => event.preventDefault();
   $('question-fields').hidden = true;
+  modal.dataset.mode = '';
+  $('close-modal').hidden = false;
   $('dialog-kicker').textContent = 'CATATAN PETUALANGAN';
   $('dialog-title').textContent = title;
   $('dialog-content').textContent = content;
   $('dialog-actions').replaceChildren(...actions);
   if (!modal.open) modal.showModal();
 }
-function closeDialog() { modal.close(); }
+function closeDialog() {
+  if (modal.dataset.mode === 'game-over' && run.health === 0) return;
+  modal.close();
+}
+modal.addEventListener('cancel', event => {
+  if (modal.dataset.mode === 'game-over') event.preventDefault();
+});
 modal.addEventListener('close', () => {
+  if (run.health === 0 && !$('game').hidden) { gameOver(); return; }
+  modal.dataset.mode = '';
+  $('close-modal').hidden = false;
   audio.setPaused(document.hidden);
   if (!$('game').hidden && $('loading').hidden) { pauseRequested = false; engine?.setPaused(false); $('board').focus({ preventScroll: true }); }
   else previousFocus?.focus({ preventScroll: true });
@@ -113,7 +124,7 @@ function updateHud() {
   $('health-hearts').replaceChildren(...Array.from({ length: run.maxHealth }, (_, index) =>
     createPixelIcon(index < run.health ? 'heart-full' : 'heart-empty')));
   $('health-status').setAttribute('aria-label', `Health ${run.health} dari ${run.maxHealth}`);
-  $('health-status').dataset.low = String(run.health === 1);
+  $('health-status').dataset.low = String(run.health <= 1);
   const solved = levelQuestions(state.level).filter(q => state.solved.includes(q.id)).length;
   $('map-progress').textContent = `${solved} / ${level.questionIds.length} MESIN AKTIF`;
   $('checkpoint-status').textContent = `Checkpoint: ${state.checkpoint === 'start' ? 'awal wilayah' : state.checkpoint}`;
@@ -147,8 +158,9 @@ async function enterGame() {
         persist(); updateHud(); audio.play('fall'); lastInteraction = '';
         fallNoticeUntil = performance.now() + 2200; $('game').dataset.contextual = 'true';
         $('interaction').textContent = depleted
-          ? 'Health habis. Kembali ke checkpoint dengan health penuh; progres belajar tetap aman.'
+          ? 'Health habis. Kembali ke checkpoint setelah memilih Coba lagi; progres belajar tetap aman.'
           : `Health -1. Kembali ke checkpoint; skor dan jawabanmu tetap aman. Health ${run.health}/3.`;
+        if (depleted) gameOver();
       },
       onFrame: updateInteraction, onPause: pause,
       onCollect: item => { if (collectItem(state, item.id)) { persist(); updateHud(); } },
@@ -156,7 +168,8 @@ async function enterGame() {
     });
     engine.respawn(state.checkpoint);
     $('loading').hidden = true; engine.start();
-    if (modal.open) { engine.setPaused(true); audio.setPaused(true); }
+    if (run.health === 0) gameOver();
+    else if (modal.open) { engine.setPaused(true); audio.setPaused(true); }
     else if (pauseRequested || document.hidden) pause();
     else $('board').focus({ preventScroll: true });
   } catch (error) {
@@ -168,7 +181,11 @@ async function enterGame() {
 }
 function updateInteraction(frame) {
   syncRunTime();
-  if (run.elapsed - lastRunSave >= 5) { saveRun(recordStorage, run); lastRunSave = run.elapsed; }
+  // The engine completes its final fall step after onFall. Save that last fraction
+  // once while Game Over is paused, so reload cannot lose or advance active time.
+  if (run.elapsed - lastRunSave >= 5 || (run.health === 0 && run.elapsed !== lastRunSave)) {
+    saveRun(recordStorage, run); lastRunSave = run.elapsed;
+  }
   if (frame) {
     $('board').dataset.playerX = Math.round(frame.player.x);
     $('board').dataset.playerY = Math.round(frame.player.y);
@@ -233,6 +250,25 @@ function pause() {
   if (!engine) return;
   dialog('Tarik napas sebentar.', 'Perjalananmu tersimpan pada checkpoint terakhir. Semua jawaban benar tetap aman.', [button('Lanjut bermain', closeDialog, true, 'play'), button('Kembali ke checkpoint', () => { engine.respawn(state.checkpoint); closeDialog(); }, true, 'back'), button('Cara bermain', help, false), button('Pengaturan', settings, false, 'settings'), button('Menu utama', () => { closeDialog(); home(); }, false, 'home')]);
   persist();
+}
+function gameOver() {
+  dialog('Game Over', '', [button('Coba lagi dari checkpoint', () => {
+    retryRun(run);
+    fallNoticeUntil = 0; lastInteraction = '';
+    engine?.respawn(state.checkpoint);
+    persist(); updateHud(); closeDialog();
+  }, true, 'play'), button('Menu utama', () => {
+    previousFocus = $('continue'); modal.close(); home();
+  }, false, 'home')]);
+  modal.dataset.mode = 'game-over';
+  $('dialog-kicker').textContent = 'NYAWA HABIS · PETUALANGAN BELUM SELESAI';
+  $('close-modal').hidden = true;
+  const hearts = document.createElement('div'); hearts.className = 'game-over-hearts';
+  hearts.setAttribute('aria-hidden', 'true');
+  for (let index = 0; index < run.maxHealth; index++) hearts.append(createPixelIcon('heart-empty'));
+  const message = document.createElement('p');
+  message.textContent = 'Tiga nyawamu habis. Jawaban, skor, kunci, dan koin tetap tersimpan. Coba lagi dari checkpoint terakhir dengan tiga nyawa baru.';
+  $('dialog-content').replaceChildren(hearts, message);
 }
 function victory() {
   audio.setPaused(false);
@@ -358,7 +394,7 @@ function help() {
     ['Bergerak dan berinteraksi', 'A/D atau panah kiri/kanan untuk berjalan. Space, W, atau panah atas untuk melompat. Tahan lompat untuk menjangkau pijakan tinggi, lepaskan lalu tekan lagi setelah mendarat. Di ponsel, tahan arah sambil menekan Lompat. Dekati mesin atau peti, lalu tekan E atau tombol Interaksi.'],
     ['Mekanik tiap wilayah', 'Akar pegas di hutan memberi dorongan saat kamu menekan lompat. Es licin di gua: lepas arah lebih awal atau tekan arah berlawanan untuk mengerem. Batu retak di kastel runtuh setelah diinjak; teruskan lompatan, lalu tunggu sampai pijakan pulih jika perlu.'],
     ['Mesin, kunci, dan checkpoint', 'Jawaban benar memulihkan mesin serta membuka gerbang atau jembatan. Tiga mesin utama tiap wilayah memberi satu kunci; tiga kunci membuka ruang harta. Pulihkan semua 12 mesin dan buka peti terakhir. Bendera serta mesin yang selesai menyimpan checkpoint. Mesin aktif dapat ditinjau lagi. Komposisi f(g(x)) berarti kerjakan g dahulu, kemudian f.'],
-    ['Nyawa dan catatan perjalanan', 'Tiga hati menunjukkan sisa nyawa. Setiap jatuh mengurangi satu; saat habis, tiga nyawa pulih di checkpoint. Jawaban salah tidak mengurangi nyawa. Skor dan jawaban tetap aman ketika jatuh. Koin dan jalur rahasia bersifat opsional. Leaderboard lokal menyimpan skor, jumlah jatuh, dan waktu aktif; waktu berhenti saat jeda atau soal terbuka.'],
+    ['Nyawa dan catatan perjalanan', 'Tiga hati menunjukkan sisa nyawa. Setiap jatuh mengurangi satu. Saat habis, Game Over menghentikan permainan. Pilih Coba lagi dari checkpoint untuk kembali dengan tiga nyawa baru. Jawaban salah tidak mengurangi nyawa. Skor dan jawaban tetap aman ketika jatuh. Koin dan jalur rahasia bersifat opsional. Leaderboard lokal menyimpan skor, jumlah jatuh, dan waktu aktif; waktu berhenti saat jeda, Game Over, atau soal terbuka.'],
   ];
   const guide = document.createElement('div'); guide.className = 'play-guide';
   for (const [title, text] of sections) {

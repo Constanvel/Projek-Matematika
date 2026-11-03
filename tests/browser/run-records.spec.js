@@ -38,8 +38,8 @@ async function walkIntoFall(page, falls) {
   await expect(page.locator('#board')).toHaveAttribute('data-player-y', '380');
 }
 
-test('three live falls restore health without losing progress; reload and pause preserve run data', async ({ page }) => {
-  test.setTimeout(45000);
+test('third live fall shows persistent Game Over and explicit retry preserves learning and run history', async ({ page }) => {
+  test.setTimeout(60000);
   const route = levels[0].parkour[0];
   const state = freshState();
   state.attempts.q1 = 1;
@@ -55,9 +55,9 @@ test('three live falls restore health without losing progress; reload and pause 
 
   for (let falls = 1; falls <= 3; falls++) {
     await walkIntoFall(page, falls);
-    await expect(page.locator('#health')).toHaveText(falls === 3 ? '3/3' : `${3 - falls}/3`);
-    await expect(page.locator('#health-status [data-icon="heart-full"]')).toHaveCount(falls === 3 ? 3 : 3 - falls);
-    await expect(page.locator('#health-status [data-icon="heart-empty"]')).toHaveCount(falls === 3 ? 0 : falls);
+    await expect(page.locator('#health')).toHaveText(`${3 - falls}/3`);
+    await expect(page.locator('#health-status [data-icon="heart-full"]')).toHaveCount(3 - falls);
+    await expect(page.locator('#health-status [data-icon="heart-empty"]')).toHaveCount(falls);
     const saved = await readStored(page, STATE_KEY);
     expect(saved.solved).toEqual(state.solved);
     expect(saved.attempts).toEqual(state.attempts);
@@ -79,8 +79,38 @@ test('three live falls restore health without losing progress; reload and pause 
       await expect(page.locator('#board')).toHaveAttribute('data-player-x', String(route.start));
     }
   }
-  await expect(page.locator('#health-status')).toHaveAttribute('data-low', 'false');
-  await expect(page.locator('#interaction')).toContainText('progres belajar tetap aman');
+  await expect(page.locator('#dialog-title')).toHaveText('Game Over');
+  await expect(page.locator('#board')).toHaveAttribute('data-paused', 'true');
+  await expect(page.locator('#close-modal')).toBeHidden();
+  const defeatedRun = await readStored(page, RUN_KEY);
+  expect(defeatedRun).toMatchObject({ health: 0, falls: 3, completed: false, recorded: false });
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#modal')).toBeVisible();
+  const stoppedX = await page.locator('#board').getAttribute('data-player-x');
+  await page.keyboard.down('KeyD'); await page.waitForTimeout(200); await page.keyboard.up('KeyD');
+  expect(await page.locator('#board').getAttribute('data-player-x')).toBe(stoppedX);
+  await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
+  expect((await readStored(page, RUN_KEY)).elapsed).toBe(defeatedRun.elapsed);
+  await page.screenshot({ path: 'test-results/game-over-desktop.png', fullPage: true });
+
+  await page.reload(); await page.locator('#continue').click();
+  await expect(page.locator('#dialog-title')).toHaveText('Game Over');
+  await expect(page.locator('#health')).toHaveText('0/3');
+  await page.getByRole('button', { name: 'Menu utama', exact: true }).click();
+  await expect(page.locator('#home')).toBeVisible();
+  expect((await readStored(page, RUN_KEY)).health).toBe(0);
+  await page.locator('#continue').click();
+  await expect(page.locator('#dialog-title')).toHaveText('Game Over');
+  await page.getByRole('button', { name: 'Coba lagi dari checkpoint', exact: true }).click();
+  await expect(page.locator('#modal')).toBeHidden();
+  await expect(page.locator('#health')).toHaveText('3/3');
+  await expect(page.locator('#health-status [data-icon="heart-full"]')).toHaveCount(3);
+  await expect(page.locator('#health-status [data-icon="heart-empty"]')).toHaveCount(0);
+  await expect(page.locator('#board')).toBeFocused();
+  await expect(page.locator('#board')).toHaveAttribute('data-player-x', String(route.start));
+  expect((await readStored(page, STATE_KEY)).solved).toEqual(state.solved);
+  expect((await readStored(page, STATE_KEY)).checkpoint).toBe(route.checkpointId);
+  await expect(page.locator('#score')).toHaveText('10');
   expect(await readStored(page, RUN_KEY)).toMatchObject({ health: 3, falls: 3, completed: false, recorded: false });
 
   await page.locator('#pause').click();
@@ -96,6 +126,29 @@ test('three live falls restore health without losing progress; reload and pause 
   await continueGame(page);
   await expect(page.locator('#health')).toHaveText('3/3');
   expect((await readStored(page, RUN_KEY)).falls).toBe(3);
+});
+
+test('saved Game Over has usable retry controls on portrait and landscape screens', async ({ page }) => {
+  const state = freshState(); state.attempts.q1 = 1; completeQuestion(state, 'q1');
+  await seedOnce(page, state, { ...createRun(), health: 0, falls: 3, elapsed: 90 });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/'); await page.locator('#continue').click();
+  await expect(page.locator('#dialog-title')).toHaveText('Game Over');
+  await expect(page.locator('#board')).toHaveAttribute('data-paused', 'true');
+  const retry = page.getByRole('button', { name: 'Coba lagi dari checkpoint', exact: true });
+  for (const [width, height] of [[390, 844], [740, 360], [320, 568]]) {
+    await page.setViewportSize({ width, height });
+    await retry.scrollIntoViewIfNeeded();
+    await expect(retry).toBeInViewport();
+    expect((await retry.boundingBox()).height).toBeGreaterThanOrEqual(44);
+    expect(await page.locator('#modal').evaluate(item => item.scrollWidth > item.clientWidth)).toBe(false);
+    await page.screenshot({ path: `test-results/game-over-${width}.png`, fullPage: true });
+  }
+  await retry.click();
+  await expect(page.locator('#health')).toHaveText('3/3');
+  await expect(page.locator('#board')).toHaveAttribute('data-paused', 'false');
+  await expect(page.locator('#score')).toHaveText('10');
+  await expect(page.locator('#health-status [data-icon="heart-full"]')).toHaveCount(3);
 });
 
 test('home leaderboard explains an empty local board', async ({ page }) => {

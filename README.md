@@ -67,7 +67,8 @@ Panel alur fungsi besar tidak lagi menutupi medan; detail berada dalam dialog ya
 
 ### Health dan leaderboard lokal
 
-- Mulai dengan 3 health; jatuh mengurangi satu. Health habis memulihkan 3 health pada checkpoint, tanpa menghapus jawaban, skor, kunci, atau koin. Jawaban salah tidak mengurangi health.
+- Mulai dengan 3 health; jatuh mengurangi satu. Pada 0/3 muncul Game Over yang menghentikan dunia, kontrol, musik, dan waktu aktif. Pilih Coba lagi dari checkpoint untuk memulihkan 3 health, atau Menu utama. Jawaban, skor, kunci, koin, jumlah jatuh, dan waktu sebelumnya tetap tersimpan. Jawaban salah tidak mengurangi health.
+- Game Over tetap berlaku setelah reload atau kembali dari menu; Escape tidak melewati pilihan ini. Save lama dengan 1–3 health tetap diterima, dan namespace run yang sama kini juga menyimpan 0 health.
 - Health, jumlah jatuh, serta waktu bermain aktif tersimpan terpisah dari progres belajar. Waktu tidak berjalan di menu, loading, dialog, atau jeda. Petualangan baru mereset run, bukan leaderboard.
 - Setelah tamat, masukkan nama opsional dan simpan hasil satu kali. Leaderboard menampilkan 10 hasil lokal: skor tertinggi, jatuh tersedikit, lalu waktu aktif tercepat. Tersedia dari menu dan layar kemenangan.
 - Tidak ada backend, akun, sinkronisasi lintas perangkat, atau perlindungan manipulasi skor lokal. Jika penyimpanan browser diblokir, gameplay tetap berjalan dan penyimpanan hasil menampilkan kegagalan.

@@ -5,6 +5,9 @@ langsung. Sebelumnya UI memakai medali dan speaker SVG orisinal. Kini 13 sprite
 turunan dari PNG pengguna digunakan untuk hati penuh/kosong, medali, speaker,
 mute, mulai/lanjut, pengaturan, kembali, leaderboard, musik, dan menu utama.
 
+Pembaruan berikutnya menambahkan Game Over pada 0 health. Pemulihan tiga hati
+kini memerlukan pilihan Coba lagi dari checkpoint; lihat aturan terbaru di README.
+
 ## Sumber dan pengolahan
 
 | Keluaran di `assets/ui/` | Sumber ZIP dan PNG |

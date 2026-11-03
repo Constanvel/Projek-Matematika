@@ -158,7 +158,7 @@ Aset karakter sumber berasal dari gambar pengguna dengan pose terbatas. Runtime 
 
 ### Health dan catatan hasil
 
-Tiga health tersedia per siklus; jatuh mengurangi satu, sedangkan jawaban salah tidak mengurangi health. Saat health habis, pemain kembali ke checkpoint dengan tiga health; jawaban, skor, kunci, dan koleksi tetap aman. Run menyimpan health, jumlah jatuh, serta waktu aktif dalam namespace terpisah `gundul-warrior-run-v1`. Waktu berasal dari langkah physics aktif, tidak termasuk menu/loading/dialog/jeda. Petualangan baru mereset run.
+Tiga health tersedia per siklus; jatuh mengurangi satu, sedangkan jawaban salah tidak mengurangi health. Pada 0 health muncul Game Over dan permainan berhenti. Pemain memilih Coba lagi dari checkpoint untuk memulihkan tiga health, atau Menu utama. Jawaban, skor, kunci, koleksi, jumlah jatuh, serta waktu sebelumnya tetap aman. Kondisi 0 health bertahan setelah reload dan tidak dapat dilewati dengan Escape. Run menyimpan health, jumlah jatuh, serta waktu aktif dalam namespace terpisah `gundul-warrior-run-v1`; save lama tetap diterima. Waktu berasal dari langkah physics aktif, tidak termasuk menu/loading/dialog/jeda/Game Over. Petualangan baru mereset run.
 
 Leaderboard lokal `gundul-warrior-leaderboard-v1` menyimpan 10 hasil tamat dengan nama opsional maksimal 20 karakter. Urutan: skor menurun, jatuh menaik, waktu aktif menaik. Penyimpanan dipicu pemain pada layar kemenangan, satu kali per run; menu dan layar kemenangan menyediakan akses daftar. Data tidak dikirim ke server dan tidak tersinkron lintas perangkat. Kegagalan penyimpanan tidak memblokir gameplay; form menampilkan pesan kegagalan. Save belajar lama tetap dapat dimuat dengan health penuh.
 

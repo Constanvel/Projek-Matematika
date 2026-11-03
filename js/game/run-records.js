@@ -22,21 +22,27 @@ export function createRun() {
 function normalizeRun(value) {
   if (!isRecord(value)) return createRun();
   const health = typeof value.health === 'number' && Number.isFinite(value.health)
-    ? Math.max(1, Math.min(MAX_HEALTH, Math.floor(value.health))) : MAX_HEALTH;
+    ? value.health === 0 ? 0 : Math.max(1, Math.min(MAX_HEALTH, Math.floor(value.health))) : MAX_HEALTH;
   return {
     health, maxHealth: MAX_HEALTH, falls: count(value.falls), elapsed: nonnegative(value.elapsed),
     completed: value.completed === true, recorded: value.recorded === true,
   };
 }
 
-/** Mutate the run; the third fall immediately restores all three health points. */
+/** The third fall leaves zero health until the player explicitly retries. */
 export function takeFall(run) {
   Object.assign(run, normalizeRun(run));
+  if (run.health === 0) return { depleted: true };
   run.falls = Math.min(Number.MAX_SAFE_INTEGER, run.falls + 1);
   run.health -= 1;
-  const depleted = run.health === 0;
-  if (depleted) run.health = MAX_HEALTH;
-  return { depleted };
+  return { depleted: run.health === 0 };
+}
+
+/** Restore only an exhausted run, keeping its fall count and active time. */
+export function retryRun(run) {
+  Object.assign(run, normalizeRun(run));
+  if (run.health === 0) run.health = MAX_HEALTH;
+  return run;
 }
 
 /** Produce plain display text, limited to 20 Unicode code points. Render with textContent. */

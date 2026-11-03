@@ -253,6 +253,13 @@ main { width: 100%; max-width: none; height: 100dvh; margin: 0; padding: 0; }
 .play-guide h3 { font: bold 12px/1.6 var(--display); margin: 20px 0 7px; color: var(--gold); }
 .play-guide h3:first-child { margin-top: 0; }
 .play-guide p { margin-bottom: 16px; line-height: 1.7; }
+dialog[data-mode="game-over"] { width: min(520px, calc(100% - 28px)); text-align: center; border-color: #674c5b; border-top-color: #f18e93; }
+dialog[data-mode="game-over"] .dialog-top { justify-content: center; border-bottom-color: #674c5b; }
+dialog[data-mode="game-over"] h2 { color: #ffb5a7; font-size: clamp(28px, 6vw, 40px); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+dialog[data-mode="game-over"] .dialog-actions { display: flex; flex-direction: column; gap: 12px; }
+dialog[data-mode="game-over"] .dialog-actions .button { width: 100%; min-height: 48px; }
+.game-over-hearts { display: flex; justify-content: center; gap: 12px; margin: 16px 0; }
+.game-over-hearts .pixel-icon { width: 32px; height: 32px; }
 @media (max-width: 600px) {
   .menu-actions .icon-button { gap: 5px; }
   .menu-actions .icon-button .pixel-icon { width: 32px; height: 32px; }

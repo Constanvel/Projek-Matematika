@@ -22,6 +22,11 @@ test('every parkour checkpoint survives walking falls and reload with learning i
       await page.reload(); await page.locator('#continue').click();
       await expect(page.locator('#loading')).toBeHidden();
       await expect(page.locator('#board')).toHaveAttribute('data-player-x', String(route.start));
+      if (await page.locator('#modal[data-mode="game-over"]').isVisible()) {
+        await expect(page.locator('#health')).toHaveText('0/3');
+        await page.getByRole('button', { name: 'Coba lagi dari checkpoint', exact: true }).click();
+        await expect(page.locator('#health')).toHaveText('3/3');
+      }
       // Observe every persisted flag, not only the final respawn. In cave-ascent
       // the legacy depths flag overlaps the route entry and must not steal it.
       await page.evaluate(() => {

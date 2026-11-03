@@ -23,7 +23,7 @@ test('runs start independently with three health points and no elapsed time', ()
   assert.equal(createRun().elapsed, 0);
 });
 
-test('every fall counts; depletion restores three health without clearing run totals', () => {
+test('third fall leaves zero health and does not count further falls until retry', () => {
   const run = createRun();
   run.elapsed = 42.5;
   assert.deepEqual(takeFall(run), { depleted: false });
@@ -31,10 +31,29 @@ test('every fall counts; depletion restores three health without clearing run to
   assert.deepEqual(takeFall(run), { depleted: false });
   assert.equal(run.health, 1);
   assert.deepEqual(takeFall(run), { depleted: true });
+  assert.deepEqual(run, { health: 0, maxHealth: 3, falls: 3, elapsed: 42.5, completed: false, recorded: false });
+  assert.deepEqual(takeFall(run), { depleted: true });
+  assert.equal(run.falls, 3);
+  assert.equal(run.health, 0);
+});
+
+test('zero health survives save and reload without changing learning or leaderboard', () => {
+  const storage = memoryStorage([['gundul-warrior-v1', '{"learning":true}'], [LEADERBOARD_KEY, '[]']]);
+  const run = { ...createRun(), health: 0, falls: 3, elapsed: 42.5 };
+  assert.equal(saveRun(storage, run), true);
+  assert.deepEqual(loadRun(storage), run);
+  assert.equal(storage.getItem('gundul-warrior-v1'), '{"learning":true}');
+  assert.equal(storage.getItem(LEADERBOARD_KEY), '[]');
+});
+
+test('retry restores health while keeping falls and elapsed history', async () => {
+  const { retryRun } = await import('../js/game/run-records.js');
+  const run = { ...createRun(), health: 0, falls: 3, elapsed: 42.5 };
+  retryRun(run);
   assert.deepEqual(run, { health: 3, maxHealth: 3, falls: 3, elapsed: 42.5, completed: false, recorded: false });
   assert.deepEqual(takeFall(run), { depleted: false });
-  assert.equal(run.falls, 4);
   assert.equal(run.health, 2);
+  assert.equal(run.falls, 4);
 });
 
 test('run persistence uses its own namespace and preserves learning and leaderboard', () => {
