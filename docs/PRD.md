@@ -22,7 +22,7 @@ Nama produk adalah **Gundul Warrior**, konsisten pada menu, identitas HUD, dan k
 
 - Latihan soal konvensional kurang interaktif.
 - Siswa sering tertukar antara f(g(x)) dan g(f(x)).
-- Jawaban akhir tanpa pembahasan tidak cukup menjelaskan kesalahan.
+- Clue membantu siswa memperbaiki langkah tanpa membocorkan hasil; pembahasan lengkap diberikan setelah berhasil.
 - Kontrol permainan yang sulit berpotensi mengalihkan perhatian dari materi.
 
 ### Tujuan produk
@@ -61,7 +61,7 @@ Satu sesi penuh ditargetkan sekitar 15–25 menit. Durasi ini merupakan hipotesi
 3. Capai checkpoint dan dekati mesin atau gerbang matematika.
 4. Tekan Interaksi untuk membuka soal; simulasi dunia berhenti.
 5. Baca fungsi, gunakan petunjuk bila perlu, lalu jawab.
-6. Jika salah, baca pembahasan dan coba kembali tanpa penalti.
+6. Jika salah, baca clue dan coba kembali tanpa penalti; hasil akhir belum ditampilkan.
 7. Jika benar, dapatkan 10 poin satu kali dan aktifkan perubahan lingkungan.
 8. Selesaikan tiga soal utama wilayah untuk mendapatkan satu kunci.
 9. Capai pintu keluar untuk berpindah ke wilayah berikutnya.
@@ -128,7 +128,7 @@ Contoh di atas adalah acuan materi, bukan kewajiban mengganti bank soal reposito
 - Setiap soal memiliki ID unik, wilayah, tujuan materi, pertanyaan, fungsi, jenis jawaban, jawaban benar, petunjuk, dan pembahasan bertahap.
 - Jawaban numerik memakai input angka; bentuk aljabar memakai pilihan ganda agar MVP tidak memerlukan parser simbolik.
 - Input kosong/tidak valid tidak dihitung sebagai jawaban salah; tampilkan pesan validasi.
-- Jawaban salah memberikan umpan balik dan pembahasan, kemudian mengizinkan percobaan ulang.
+- Jawaban salah memberikan umpan balik dan clue otomatis, kemudian mengizinkan percobaan ulang. Hasil akhir, daftar penyelesaian, dan hasil antara mesin belum ditampilkan, termasuk setelah kesalahan berulang.
 - Jawaban benar menampilkan pembahasan sebelum pemain kembali ke dunia.
 - Soal yang selesai dapat ditinjau ulang, tanpa memberikan poin atau kunci tambahan.
 - Untuk komposisi, tampilkan urutan fungsi dan hasil antara, bukan jawaban akhir saja.

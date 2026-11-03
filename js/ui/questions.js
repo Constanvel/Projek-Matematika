@@ -11,11 +11,16 @@ export function showQuestion({ question, gate, state, dialog, button, persist, u
   $('function-def').textContent = question.functions;
   $('question-prompt').textContent = question.prompt;
   $('hint-text').textContent = question.hint;
-  $('hint-text').hidden = true;
+  const setHintVisible = visible => {
+    $('hint-text').hidden = !visible;
+    $('hint').setAttribute('aria-expanded', String(visible));
+  };
+  $('hint').setAttribute('aria-controls', 'hint-text');
+  setHintVisible(false);
   $('feedback').replaceChildren();
   $('feedback').className = '';
   $('check').disabled = review;
-  $('hint').onclick = () => { $('hint-text').hidden = !$('hint-text').hidden; };
+  $('hint').onclick = () => setHintVisible($('hint-text').hidden);
   const flow = $('machine-flow');
   function renderFlow(solved) {
     flow.replaceChildren();
@@ -53,15 +58,15 @@ export function showQuestion({ question, gate, state, dialog, button, persist, u
     }
     area.append(group);
   }
-  function explanation(message, correct) {
-    const feedback = $('feedback'); feedback.replaceChildren(); feedback.className = correct ? '' : 'error';
+  function explanation(message) {
+    const feedback = $('feedback'); feedback.replaceChildren(); feedback.className = '';
     const heading = document.createElement('strong'); heading.textContent = message;
     const list = document.createElement('ol');
     question.explanation.forEach(step => { const li = document.createElement('li'); li.textContent = step; list.append(li); });
     feedback.append(heading, list);
   }
   if (review) {
-    explanation('Mesin ini sudah aktif. Pelajari kembali langkahnya.', true);
+    explanation('Mesin ini sudah aktif. Pelajari kembali langkahnya.');
     $('dialog-actions').replaceChildren(button('Kembali menjelajah', () => $('modal').close()));
   }
   $('question-form').onsubmit = event => {
@@ -71,14 +76,19 @@ export function showQuestion({ question, gate, state, dialog, button, persist, u
     const correct = checkAnswer(question, raw);
     if (correct === null) { $('feedback').textContent = 'Masukkan angka yang valid atau pilih satu jawaban.'; $('feedback').className = 'error'; return; }
     state.attempts[question.id] = (state.attempts[question.id] || 0) + 1;
-    explanation(correct ? `Benar! +10 poin. ${gate.effect}` : 'Belum tepat. Pelajari langkahnya, lalu coba kembali.', correct);
     if (correct) {
+      setHintVisible(false);
+      explanation(`Benar! +10 poin. ${gate.effect}`);
       completeQuestion(state, question.id);
       renderFlow(true);
       $('check').disabled = true;
       area.querySelectorAll('input').forEach(input => { input.disabled = true; });
       $('dialog-actions').replaceChildren(button('Lanjut menjelajah', () => $('modal').close()));
       update();
+    } else {
+      $('feedback').textContent = 'Belum tepat. Gunakan petunjuk untuk mencoba kembali.';
+      $('feedback').className = 'error';
+      setHintVisible(true);
     }
     persist();
   };

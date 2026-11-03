@@ -46,7 +46,7 @@ Build menyalin `index.html`, `css`, `js`, atlas pixel karakter, dan sprite UI di
 - Koin emas mendorong eksplorasi dan rahasia; tidak menambah skor matematika atau menjadi syarat tamat.
 - Pada layar sentuh, tahan arah sambil menekan **Lompat**.
 
-Dekati mesin untuk menjawab soal. Jawaban benar memberi 10 poin sekali dan membuka pengunci/jembatan. Jawaban salah memberikan pembahasan dan kesempatan mencoba kembali tanpa penalti. Mesin selesai dapat ditinjau ulang. Dunia berhenti saat soal terbuka.
+Dekati mesin untuk menjawab soal. Jawaban benar memberi 10 poin sekali dan membuka pengunci/jembatan. Jawaban salah otomatis menampilkan clue tanpa hasil akhir atau langkah penyelesaian lengkap, lalu memberi kesempatan mencoba kembali tanpa penalti. Pembahasan lengkap dan hasil antara baru muncul setelah benar atau saat meninjau mesin selesai. Tombol Petunjuk dapat membuka/menutup clue. Dunia berhenti saat soal terbuka.
 
 Bendera menyimpan checkpoint. Menyelesaikan mesin juga langsung menyimpan titik aman di dekat terminal. Jatuh mengembalikan karakter ke checkpoint; jawaban dan skor tidak hilang. Dua mesin di gua memperlihatkan urutan fungsi dan hasil antara setelah berhasil. Lanjutkan permainan dari browser dan origin yang sama.
 

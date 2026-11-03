@@ -28,6 +28,9 @@ test('new adventures randomize once; wrong answers, review and reload keep the s
   await page.locator('#answer').fill('999999');
   await page.locator('#check').click();
   await expect(page.locator('#feedback')).toContainText('Belum tepat');
+  await expect(page.locator('#hint-text')).toBeVisible();
+  await expect(page.locator('#hint-text')).toHaveText(question.hint);
+  await expect(page.locator('#feedback ol')).toHaveCount(0);
   await expect(page.locator('#question-prompt')).toHaveText(question.prompt);
   await page.locator('#answer').fill(String(Number(a) * Number(n) + Number(b)));
   await page.locator('#check').click();

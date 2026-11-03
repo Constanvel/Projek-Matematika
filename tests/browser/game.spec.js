@@ -94,6 +94,10 @@ test('assets, movement, jump, pause, wrong answers, review and reload', async ({
   await page.getByRole('button', { name: 'Periksa jawaban' }).click();
   await expect(page.locator('#feedback')).toContainText('Belum tepat');
   await expect(page.locator('#score')).toHaveText('0');
+  await expect(page.locator('#hint-text')).toBeVisible();
+  await expect(page.locator('#feedback ol')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Petunjuk', exact: true }).click();
+  await expect(page.locator('#hint-text')).toBeHidden();
   await page.getByRole('button', { name: 'Petunjuk', exact: true }).click();
   await expect(page.locator('#hint-text')).toBeVisible();
   const { questionsForState } = await import('../../js/data/question-runs.js');
