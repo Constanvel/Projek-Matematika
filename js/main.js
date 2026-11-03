@@ -1,4 +1,4 @@
-import { questions } from './data/questions.js';
+import { questionsForState, newQuestionSeed, QUESTION_SET_VERSION } from './data/question-runs.js';
 import { levels } from './data/levels.js';
 import { freshState, score, levelQuestions, levelComplete, advanceLevel, collectItem } from './state.js';
 import { load, save } from './storage.js';
@@ -95,7 +95,9 @@ function home() { launchId++; persist(); engine?.stop(); engine = null; showScre
 function newGame() {
   const begin = () => {
     engine?.stop(); engine = null;
-    state = freshState(); run = resetRun(recordStorage); measuredEngineTime = 0; lastRunSave = 0;
+    const questionSeed = newQuestionSeed(state?.questionSeed);
+    state = { ...freshState(), questionSeed, questionSetVersion: QUESTION_SET_VERSION };
+    run = resetRun(recordStorage); measuredEngineTime = 0; lastRunSave = 0;
     persist(); closeDialog(); enterGame();
   };
   if (state) dialog('Mulai perjalanan baru?', 'Progres Gundul Warrior akan diganti. Tindakan ini tidak dapat dibatalkan. Progres Function Adventure lama tidak diubah.', [button('Ya, mulai baru', begin), button('Batalkan', closeDialog, false)]);
@@ -116,7 +118,8 @@ function updateHud() {
   $('chapter').textContent = `GUNDUL WARRIOR / WILAYAH 0${state.level + 1}`;
   $('level-title').textContent = level.name;
   $('level-subtitle').textContent = level.subtitle;
-  $('lesson').textContent = level.lesson;
+  $('lesson').textContent = state.questionSeed && state.level === 2
+    ? 'Gunakan operasi fungsi, invers, dan urutan kunci untuk memulihkan kode pesan.' : level.lesson;
   $('score').textContent = score(state);
   $('keys').textContent = state.keys.length;
   $('coins').textContent = state.collected?.length || 0;
@@ -224,7 +227,7 @@ function interact(item) {
   if (!item) return;
   if (item.type === 'gate') {
     const gate = item.gate || item;
-    const question = questions.find(q => q.id === gate.questionId);
+    const question = questionsForState(state).find(q => q.id === gate.questionId);
     const previousKeys = state.keys.length;
     showQuestion({ question, gate, state, dialog, button, persist, update: () => {
       engine.rememberCheckpoint(state.checkpoint);
@@ -393,8 +396,9 @@ function help() {
   const sections = [
     ['Bergerak dan berinteraksi', 'A/D atau panah kiri/kanan untuk berjalan. Space, W, atau panah atas untuk melompat. Tahan lompat untuk menjangkau pijakan tinggi, lepaskan lalu tekan lagi setelah mendarat. Di ponsel, tahan arah sambil menekan Lompat. Dekati mesin atau peti, lalu tekan E atau tombol Interaksi.'],
     ['Mekanik tiap wilayah', 'Akar pegas di hutan memberi dorongan saat kamu menekan lompat. Es licin di gua: lepas arah lebih awal atau tekan arah berlawanan untuk mengerem. Batu retak di kastel runtuh setelah diinjak; teruskan lompatan, lalu tunggu sampai pijakan pulih jika perlu.'],
-    ['Mesin, kunci, dan checkpoint', 'Jawaban benar memulihkan mesin serta membuka gerbang atau jembatan. Tiga mesin utama tiap wilayah memberi satu kunci; tiga kunci membuka ruang harta. Pulihkan semua 12 mesin dan buka peti terakhir. Bendera serta mesin yang selesai menyimpan checkpoint. Mesin aktif dapat ditinjau lagi. Komposisi f(g(x)) berarti kerjakan g dahulu, kemudian f.'],
+    ['Mesin, kunci, dan checkpoint', 'Jawaban benar memulihkan mesin serta membuka gerbang atau jembatan. Tiga mesin utama tiap wilayah memberi satu kunci; tiga kunci membuka ruang harta. Pulihkan semua 12 mesin dan buka peti terakhir. Bendera serta mesin yang selesai menyimpan checkpoint. Mesin aktif dapat ditinjau lagi. Komposisi f(g(x)) berarti kerjakan g dahulu, kemudian f. Invers membalikkan operasi; dekripsi dua tahap membalikkan urutan kedua kunci.'],
     ['Nyawa dan catatan perjalanan', 'Tiga hati menunjukkan sisa nyawa. Setiap jatuh mengurangi satu. Saat habis, Game Over menghentikan permainan. Pilih Coba lagi dari checkpoint untuk kembali dengan tiga nyawa baru. Jawaban salah tidak mengurangi nyawa. Skor dan jawaban tetap aman ketika jatuh. Koin dan jalur rahasia bersifat opsional. Leaderboard lokal menyimpan skor, jumlah jatuh, dan waktu aktif; waktu berhenti saat jeda, Game Over, atau soal terbuka.'],
+    ['Variasi soal', 'Petualangan baru memilih paket soal berbeda. Lanjutkan, reload, meninjau mesin, dan Coba lagi dari checkpoint mempertahankan soal yang sama. Save lama tetap memakai paket awal.'],
   ];
   const guide = document.createElement('div'); guide.className = 'play-guide';
   for (const [title, text] of sections) {

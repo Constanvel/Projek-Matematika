@@ -2,6 +2,12 @@
 
 Platformer edukasi 2D side-scrolling berbahasa Indonesia. Bergerak ke kiri–kanan, melompat, dan pulihkan mesin matematika untuk membuka jembatan serta gerbang. HTML, CSS, JavaScript ES modules, Canvas 2D, dan localStorage; tanpa framework, backend, atau aset CDN.
 
+Run baru memakai soal acak bertahap tentang fungsi, operasi aljabar, komposisi,
+invers, dan simulasi enkripsi–dekripsi. [Pemetaan terhadap e-book](docs/MATERIAL-ALIGNMENT.md)
+menjelaskan cakupan yang sebelumnya kurang serta materi paket baru. Paket soal
+dipilih saat Petualangan baru, lalu tetap sama setelah reload, review, atau retry
+Game Over. Save lama melanjutkan soal asli agar progres tidak berubah.
+
 ## Dokumen produk
 
 [Rencana keterbacaan dan platforming](docs/PLATFORMING-PLAN.md) mencatat referensi desain Mario, tahapan atomic commit, dan kriteria tantangan yang adil. Prinsip yang dipakai adalah pengenalan aman, pengembangan pola, variasi, dan area pemulihan; bukan penyalinan aset atau level.
@@ -50,8 +56,11 @@ Bendera menyimpan checkpoint. Menyelesaikan mesin juga langsung menyimpan titik 
 | --- | --- | --- |
 | Hutan Fungsi | q1–q3 | Substitusi dan pengenalan fungsi |
 | Gua Komposisi | q4–q6 | Komposisi numerik dan urutan |
-| Kastel Matematika | q7–q9 | Komposisi kuadrat dan aljabar |
-| Ruang harta di dalam kastel | q10–q12 | Tantangan gabungan |
+| Kastel Matematika | q7–q9 | Operasi fungsi, invers, dan invers komposisi |
+| Ruang harta di dalam kastel | q10–q12 | Enkripsi dan dekripsi satu/dua tahap |
+
+Tabel mengikuti paket run baru. Save lama tetap memakai paket asli komposisi
+kuadrat, aljabar, serta tantangan gabungan.
 
 Tiga wilayah memakai geometri dan mekanik permukaan berbeda: akar pegas hutan memperkuat lompatan manual, es gua mengurangi pengereman, dan batu retak kastel runtuh 0,7 detik setelah diinjak lalu pulih setelah 2,5 detik. Gimmick diajarkan di atas lantai aman sebelum bagian lanjut. Rangkaian wajib dipisahkan area istirahat dan checkpoint; lantai terputus memerlukan lompatan yang disengaja, bukan berjalan lurus. Jalur rahasia tetap opsional, dengan total 55 koin terpisah dari skor matematika.
 
@@ -95,6 +104,7 @@ js/game/assets.js              Preload atlas pixel lokal dan pemulihan gagal mua
 js/ui/questions.js             Soal, petunjuk, pembahasan
 js/data/levels.js              Geometri dan objek tiga wilayah
 js/data/questions.js           12 soal dan validasi jawaban
+js/data/question-runs.js       Variasi soal deterministik per petualangan
 js/data/machines.js            Urutan mesin dan nilai antara yang ditulis eksplisit
 js/state.js                    Skor, prasyarat, validasi progres
 js/storage.js                  localStorage

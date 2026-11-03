@@ -96,7 +96,8 @@ test('assets, movement, jump, pause, wrong answers, review and reload', async ({
   await expect(page.locator('#score')).toHaveText('0');
   await page.getByRole('button', { name: 'Petunjuk', exact: true }).click();
   await expect(page.locator('#hint-text')).toBeVisible();
-  const { questions } = await import('../../js/data/questions.js');
+  const { questionsForState } = await import('../../js/data/question-runs.js');
+  const questions = questionsForState(await page.evaluate(key => JSON.parse(localStorage.getItem(key)), key));
   await answer(page, questions[0]);
   await expect(page.locator('#score')).toHaveText('10');
   await page.keyboard.press('KeyE');
@@ -125,7 +126,8 @@ test('all twelve questions through real level travel, checkpoints and victory', 
   test.setTimeout(240000);
   const errors = []; page.on('pageerror', error => { errors.push(error.message); console.error(error.stack); });
   await start(page);
-  const { questions } = await import('../../js/data/questions.js');
+  const { questionsForState } = await import('../../js/data/question-runs.js');
+  const questions = questionsForState(await page.evaluate(key => JSON.parse(localStorage.getItem(key)), key));
   const { levels } = await import('../../js/data/levels.js');
   for (let index = 0; index < levels.length; index++) {
     const level = levels[index];
@@ -137,8 +139,11 @@ test('all twelve questions through real level travel, checkpoints and victory', 
       if (gate.questionId === 'q4') {
         await page.screenshot({ path: 'test-results/composition-machines.png', fullPage: true });
         await page.keyboard.press('KeyE');
-        await expect(page.locator('#machine-flow')).toContainText('g(4) = 3');
-        await expect(page.locator('#machine-flow')).toContainText('f(3) = 9');
+        const q = questions.find(q => q.id === 'q4');
+        const [a, b, c] = q.functions.match(/\d+/g).map(Number);
+        const n = Number(q.prompt.match(/f\(g\((\d+)\)\)/)[1]);
+        await expect(page.locator('#machine-flow')).toContainText(`g(${n}) = ${n - c}`);
+        await expect(page.locator('#machine-flow')).toContainText(`f(${n - c}) = ${a * (n - c) + b}`);
         await page.getByRole('button', { name: 'Kembali menjelajah' }).click();
         await expect(page.locator('#modal')).toBeHidden();
         await expect(page.locator('#board')).toHaveAttribute('data-paused', 'false');

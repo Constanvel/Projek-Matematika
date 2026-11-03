@@ -130,6 +130,7 @@ test('third live fall shows persistent Game Over and explicit retry preserves le
 
 test('saved Game Over has usable retry controls on portrait and landscape screens', async ({ page }) => {
   const state = freshState(); state.attempts.q1 = 1; completeQuestion(state, 'q1');
+  state.questionSeed = 12345; state.questionSetVersion = 1;
   await seedOnce(page, state, { ...createRun(), health: 0, falls: 3, elapsed: 90 });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/'); await page.locator('#continue').click();
@@ -149,6 +150,7 @@ test('saved Game Over has usable retry controls on portrait and landscape screen
   await expect(page.locator('#board')).toHaveAttribute('data-paused', 'false');
   await expect(page.locator('#score')).toHaveText('10');
   await expect(page.locator('#health-status [data-icon="heart-full"]')).toHaveCount(3);
+  expect((await readStored(page, STATE_KEY)).questionSeed).toBe(12345);
 });
 
 test('home leaderboard explains an empty local board', async ({ page }) => {
@@ -240,6 +242,8 @@ test('victory records safe names in rank order once and a new game preserves the
   await expect(page.locator('#loading')).toBeHidden();
   await expect(page.locator('#health')).toHaveText('3/3');
   expect(await readStored(page, RUN_KEY)).toEqual(createRun());
-  expect(await readStored(page, STATE_KEY)).toEqual(freshState());
+  const { questionSeed, questionSetVersion, ...resetProgress } = await readStored(page, STATE_KEY);
+  expect(resetProgress).toEqual(freshState());
+  expect(questionSeed).toBeGreaterThan(0); expect(questionSetVersion).toBe(1);
   expect(await readStored(page, LEADERBOARD_KEY)).toEqual(savedBoard);
 });

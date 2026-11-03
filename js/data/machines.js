@@ -23,8 +23,8 @@ export const machineDefinitions = {
 };
 
 /** Shared presentation model for the dialog and world. Unsolved paths expose no values. */
-export function getMachineFlow(questionId, solved = false) {
-  const definition = machineDefinitions[questionId] || { kind: 'generic', labels: ['INPUT', 'FUNGSI', 'OUTPUT'] };
+export function getMachineFlow(questionId, solved = false, definition = machineDefinitions[questionId]
+  || { kind: 'generic', labels: ['INPUT', 'FUNGSI', 'OUTPUT'] }) {
   const paths = (definition.paths || []).map(path => {
     let input = path.input;
     const steps = path.steps.map(step => {

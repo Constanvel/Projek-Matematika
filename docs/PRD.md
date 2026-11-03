@@ -107,6 +107,10 @@ Platforming mendukung pembelajaran: tidak ada lompatan presisi ekstrem, kematian
 - Menjelaskan bahwa (f ∘ g)(x) = f(g(x)), sehingga g dikerjakan dahulu.
 - Membedakan urutan komposisi; komposisi pada umumnya tidak komutatif.
 - Menghitung komposisi numerik dan mengenali bentuk aljabar hasil komposisi.
+- Pada paket run baru: menghitung operasi aljabar fungsi, menentukan invers
+  fungsi linear, membalik urutan komposisi, serta melakukan simulasi enkripsi
+  dan dekripsi kode bilangan. [Pemetaan e-book](MATERIAL-ALIGNMENT.md) membedakan
+  cakupan kuis dari tujuan proyek kelompok dan presentasi.
 
 ### Contoh acuan matematika
 
@@ -130,6 +134,9 @@ Contoh di atas adalah acuan materi, bukan kewajiban mengganti bank soal reposito
 - Untuk komposisi, tampilkan urutan fungsi dan hasil antara, bukan jawaban akhir saja.
 - Tidak menggunakan `eval` untuk memeriksa jawaban. Semua soal dan pengecoh divalidasi manual serta melalui unit test.
 - Jumlah jawaban benar pada ringkasan berarti jumlah soal unik selesai, bukan jumlah pengiriman jawaban.
+- Petualangan baru mengacak parameter dan posisi opsi tanpa mengubah urutan
+  q1–q12. Seed dan versi paket disimpan; reload, review, jawaban salah, serta
+  retry Game Over tidak mengacak ulang. Save lama melanjutkan soal asli.
 
 ## 8. Arah visual: pixel art 2D
 

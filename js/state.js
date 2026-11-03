@@ -1,4 +1,5 @@
 import { questions } from './data/questions.js';
+import { validQuestionSeed, QUESTION_SET_VERSION } from './data/question-runs.js';
 import { levels, levelForQuestion, phaseFor } from './data/levels.js';
 
 export const freshState = () => ({ version: 1, contentVersion: 1, level: 0, phase: 'journey', checkpoint: 'start', solved: [], attempts: {}, keys: [], collected: [], won: false });
@@ -42,6 +43,8 @@ export function advanceLevel(state) {
 export function validateState(data) {
   if (!data || data.version !== 1 || data.contentVersion !== 1 || !Number.isInteger(data.level) || data.level < 0 || data.level >= levels.length ||
     !Array.isArray(data.solved) || !Array.isArray(data.keys) || !data.attempts || typeof data.attempts !== 'object' || Array.isArray(data.attempts) || typeof data.won !== 'boolean') return null;
+  const hasQuestionRun = data.questionSeed !== undefined || data.questionSetVersion !== undefined;
+  if (hasQuestionRun && (!validQuestionSeed(data.questionSeed) || data.questionSetVersion !== QUESTION_SET_VERSION)) return null;
   const known = new Set(questions.map(q => q.id));
   if (new Set(data.solved).size !== data.solved.length || data.solved.some(id => !known.has(id) || levelForQuestion(id) > data.level)) return null;
   if (new Set(data.keys).size !== data.keys.length || data.keys.some(k => !Number.isInteger(k) || k < 0 || k > data.level)) return null;
@@ -82,5 +85,6 @@ export function validateState(data) {
     if ((item.requiresQuestion && !data.solved.includes(item.requiresQuestion))
       || level.gates.some(gate => gate.x < item.x && !data.solved.includes(gate.questionId))) return null;
   }
-  return { version: 1, contentVersion: 1, level: data.level, phase, checkpoint: data.checkpoint, solved: [...data.solved], attempts: { ...data.attempts }, keys: [...data.keys], collected: [...collected], won: data.won };
+  return { version: 1, contentVersion: 1, level: data.level, phase, checkpoint: data.checkpoint, solved: [...data.solved], attempts: { ...data.attempts }, keys: [...data.keys], collected: [...collected], won: data.won,
+    ...(hasQuestionRun ? { questionSeed: data.questionSeed, questionSetVersion: data.questionSetVersion } : {}) };
 }

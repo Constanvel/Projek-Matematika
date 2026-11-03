@@ -19,7 +19,7 @@ export function showQuestion({ question, gate, state, dialog, button, persist, u
   const flow = $('machine-flow');
   function renderFlow(solved) {
     flow.replaceChildren();
-    const model = getMachineFlow(question.id, solved);
+    const model = getMachineFlow(question.id, solved, question.machine);
     const rows = model.paths.length ? model.paths : [{ tokens: model.labels }];
     rows.forEach(path => {
       const row = document.createElement('div');
