@@ -8,6 +8,8 @@ Platformer edukasi 2D side-scrolling berbahasa Indonesia. Bergerak ke kiri–kan
 
 [PRD Gundul Warrior](docs/PRD.md) menetapkan kebutuhan platformer pixel art layar penuh, materi matematika, kontrol, dan kriteria penerimaan. Nama Function Adventure hanya asal konsep laporan sekolah. Implementasi memakai Canvas rendah 480×270 yang diperbesar nearest-neighbor, karakter pixel turunan orisinal, tiga wilayah, koleksi opsional, serta musik chiptune lokal.
 
+[Catatan polesan aset](docs/ASSET-POLISH.md) menjelaskan variasi kanopi hutan, air terjun di dinding gua, lapisan arsitektur kastel, ikon pixel orisinal, serta batas penggunaan kandidat unduhan yang lisensinya belum terverifikasi. Semua perubahan tersebut memakai geometri level dan progres belajar yang sama.
+
 Menu merupakan overlay di atas dunia, bukan halaman promosi. Permainan memenuhi viewport tanpa memotong rasio medan. Pada ponsel portrait, letterbox menjaga seluruh lebar kamera terlihat dan menyediakan ruang kontrol. Tombol **Layar penuh** menyembunyikan antarmuka browser jika Fullscreen API diizinkan; jika tidak, game tetap mengisi viewport.
 
 ## Menjalankan
@@ -26,7 +28,7 @@ Buka http://localhost:4173. Server hanya untuk pengembangan lokal. Tidak perlu `
 - **Space**, **W**, atau panah atas: melompat. Tahan untuk lompatan lebih tinggi.
 - **E** atau tombol **Interaksi**: gunakan mesin atau peti terdekat.
 - **Esc**: jeda. Dunia juga berhenti ketika tab kehilangan fokus.
-- **Pengaturan**: mute dan volume musik/efek; audio baru dimulai setelah interaksi.
+- **Pengaturan**: mute, volume utama, volume musik, dan volume efek suara secara terpisah; audio baru dimulai setelah interaksi. Preferensi audio lama tetap diterima dengan level kanal musik/efek 100%, sehingga volume utama lama tetap berlaku.
 - Koin emas mendorong eksplorasi dan rahasia; tidak menambah skor matematika atau menjadi syarat tamat.
 - Pada layar sentuh, tahan arah sambil menekan **Lompat**.
 
@@ -79,6 +81,7 @@ js/game/run-records.js         Health, run aktif, dan leaderboard lokal terpisah
 js/game/pixel-character.js     Sprite pixel turunan dan tujuh jenis animasi
 js/game/menu-scene.js          Pemandangan menu/kemenangan
 js/game/audio.js               Musik chiptune dan efek Web Audio orisinal
+js/ui/pixel-icons.js           Medali peringkat dan ikon speaker pixel orisinal
 js/game/assets.js              Preload atlas pixel lokal dan pemulihan gagal muat
 js/ui/questions.js             Soal, petunjuk, pembahasan
 js/data/levels.js              Geometri dan objek tiga wilayah
@@ -109,8 +112,9 @@ Transparansi aset processed direkonstruksi secara heuristik karena sumber RGB ti
 - Koleksi ditambahkan sebagai field opsional `collected`; save lama mendapat daftar kosong tanpa kehilangan soal, skor, atau kunci. Pengaturan audio disimpan terpisah di `gundul-warrior-audio-v1`.
 - Save korup, versi tak dikenal, progres melompati gerbang, dan checkpoint tak sah ditolak.
 - Storage ditolak browser tidak menghentikan permainan; peringatan ditampilkan.
-- Tidak ada akun, sinkronisasi, leaderboard, combat, musuh aktif, atau platform bergerak.
+- Tidak ada akun, sinkronisasi lintas perangkat, combat, musuh aktif, atau platform bergerak. Leaderboard hanya disimpan lokal.
 - Audio disintesis melalui Web Audio setelah gesture; browser tanpa dukungan audio tetap dapat memainkan game.
+- Musik tiap wilayah memakai dua frasa bergantian; kanal musik dan efek mempunyai volume terpisah di bawah volume utama. Preferensi tambahan tetap di namespace audio, bukan save progres belajar.
 - localStorage bukan penyimpanan antimanipulasi.
 - Seluruh aset lokal; server lokal dapat digunakan tanpa internet. Hosting belum memiliki service worker/offline cache.
 - Navigasi Canvas memerlukan penglihatan. Menu, input soal, dan pembahasan memakai DOM/keyboard; bukan game yang sepenuhnya dapat dimainkan dengan pembaca layar.
