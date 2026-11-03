@@ -22,6 +22,12 @@ npm start
 
 Buka http://localhost:4173. Server hanya untuk pengembangan lokal. Tidak perlu `npm install` untuk memainkan game; dependensi npm hanya untuk pengujian browser. Jangan buka `index.html` melalui `file://` karena memakai ES modules.
 
+## Deployment Vercel
+
+Proyek Vercel `projek-matematika` terhubung ke branch produksi `main`. `vercel.json` memilih preset Other dan menjalankan `npm run build`, lalu menyajikan folder `dist` sebagai situs statis. `server.js` hanya dipakai saat pengembangan lokal.
+
+Build menyalin `index.html`, `css`, `js`, dan atlas pixel karakter yang dipakai saat bermain. Dokumen, pengujian, gambar sumber karakter, serta dependensi tidak masuk hasil build. Jalankan `npm run build` untuk memeriksanya secara lokal. Setelah perubahan di-push ke `main`, tunggu deployment Vercel berstatus Ready dan periksa https://projek-matematika.vercel.app.
+
 ## Cara bermain
 
 - **A/D** atau panah kiri/kanan: berjalan.
