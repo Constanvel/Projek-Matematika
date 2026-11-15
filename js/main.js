@@ -9,7 +9,7 @@ import { showQuestion } from './ui/questions.js';
 import { createPixelIcon } from './ui/pixel-icons.js';
 import { GameAudio } from './game/audio.js';
 import { startMenuScene } from './game/menu-scene.js';
-import { loadRun, saveRun, resetRun, takeFall, retryRun, getLeaderboard, recordVictory } from './game/run-records.js';
+import { loadRun, saveRun, resetRun, takeFall, takeWrongAnswer, resetHealth, retryRun, getLeaderboard, recordVictory } from './game/run-records.js';
 
 const $ = id => document.getElementById(id);
 for (const [id, name] of [['start', 'play'], ['continue', 'play'], ['settings', 'settings'],
@@ -229,7 +229,12 @@ function interact(item) {
     const gate = item.gate || item;
     const question = questionsForState(state).find(q => q.id === gate.questionId);
     const previousKeys = state.keys.length;
-    showQuestion({ question, gate, state, dialog, button, persist, update: () => {
+    showQuestion({ question, gate, state, dialog, button, persist, onWrong: () => {
+      const { depleted } = takeWrongAnswer(run);
+      updateHud();
+      if (depleted) gameOver();
+      return depleted;
+    }, update: () => {
       engine.rememberCheckpoint(state.checkpoint);
       engine.emit('machine', gate.x, gate.y + gate.h);
       if (state.keys.length > previousKeys) engine.emit('key', gate.x - 55, gate.y + gate.h - 90);
@@ -242,7 +247,7 @@ function interact(item) {
     } else {
       dialog(`${levels[state.level].name} ditaklukkan`, `Kunci ke-${state.level + 1} ditemukan. Skor: ${score(state)}. Selanjutnya: ${levels[state.level + 1].name}.`, [button('Lanjut ke wilayah berikutnya', () => {
         syncRunTime(); engine?.stop(); engine = null;
-        advanceLevel(state); persist(); closeDialog(); enterGame();
+        advanceLevel(state); resetHealth(run); persist(); closeDialog(); enterGame();
       }), button('Kembali ke menu', () => { closeDialog(); home(); }, false)]);
     }
   }
@@ -397,7 +402,7 @@ function help() {
     ['Bergerak dan berinteraksi', 'A/D atau panah kiri/kanan untuk berjalan. Space, W, atau panah atas untuk melompat. Tahan lompat untuk menjangkau pijakan tinggi, lepaskan lalu tekan lagi setelah mendarat. Di ponsel, tahan arah sambil menekan Lompat. Dekati mesin atau peti, lalu tekan E atau tombol Interaksi.'],
     ['Mekanik tiap wilayah', 'Akar pegas di hutan memberi dorongan saat kamu menekan lompat. Es licin di gua: lepas arah lebih awal atau tekan arah berlawanan untuk mengerem. Batu retak di kastel runtuh setelah diinjak; teruskan lompatan, lalu tunggu sampai pijakan pulih jika perlu.'],
     ['Mesin, kunci, dan checkpoint', 'Jawaban benar memulihkan mesin serta membuka gerbang atau jembatan. Tiga mesin utama tiap wilayah memberi satu kunci; tiga kunci membuka ruang harta. Pulihkan semua 12 mesin dan buka peti terakhir. Bendera serta mesin yang selesai menyimpan checkpoint. Mesin aktif dapat ditinjau lagi. Komposisi f(g(x)) berarti kerjakan g dahulu, kemudian f. Invers membalikkan operasi; dekripsi dua tahap membalikkan urutan kedua kunci.'],
-    ['Nyawa dan catatan perjalanan', 'Tiga hati menunjukkan sisa nyawa. Setiap jatuh mengurangi satu. Saat habis, Game Over menghentikan permainan. Pilih Coba lagi dari checkpoint untuk kembali dengan tiga nyawa baru. Jawaban salah tidak mengurangi nyawa. Skor dan jawaban tetap aman ketika jatuh. Koin dan jalur rahasia bersifat opsional. Leaderboard lokal menyimpan skor, jumlah jatuh, dan waktu aktif; waktu berhenti saat jeda, Game Over, atau soal terbuka.'],
+    ['Nyawa dan catatan perjalanan', 'Tiga hati menunjukkan sisa nyawa. Setiap jatuh atau jawaban salah mengurangi satu. Nyawa terisi penuh lagi setiap menyelesaikan satu wilayah. Saat habis, Game Over menghentikan permainan. Pilih Coba lagi dari checkpoint untuk kembali dengan tiga nyawa baru. Skor dan jawaban tetap aman ketika jatuh. Koin dan jalur rahasia bersifat opsional. Leaderboard lokal menyimpan skor, jumlah jatuh, dan waktu aktif; waktu berhenti saat jeda, Game Over, atau soal terbuka.'],
     ['Variasi soal', 'Petualangan baru memilih paket soal berbeda. Lanjutkan, reload, meninjau mesin, dan Coba lagi dari checkpoint mempertahankan soal yang sama. Save lama tetap memakai paket awal.'],
   ];
   const guide = document.createElement('div'); guide.className = 'play-guide';

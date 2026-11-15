@@ -46,7 +46,7 @@ Build menyalin `index.html`, `css`, `js`, atlas pixel karakter, dan sprite UI di
 - Koin emas mendorong eksplorasi dan rahasia; tidak menambah skor matematika atau menjadi syarat tamat.
 - Pada layar sentuh, tahan arah sambil menekan **Lompat**.
 
-Dekati mesin untuk menjawab soal. Jawaban benar memberi 10 poin sekali dan membuka pengunci/jembatan. Jawaban salah otomatis menampilkan clue tanpa hasil akhir atau langkah penyelesaian lengkap, lalu memberi kesempatan mencoba kembali tanpa penalti. Pembahasan lengkap dan hasil antara baru muncul setelah benar atau saat meninjau mesin selesai. Tombol Petunjuk dapat membuka/menutup clue. Dunia berhenti saat soal terbuka.
+Dekati mesin untuk menjawab soal. Jawaban benar memberi 10 poin sekali dan membuka pengunci/jembatan. Jawaban salah otomatis menampilkan clue tanpa hasil akhir atau langkah penyelesaian lengkap, lalu memberi kesempatan mencoba kembali, dengan harga satu health per jawaban salah. Pembahasan lengkap dan hasil antara baru muncul setelah benar atau saat meninjau mesin selesai. Tombol Petunjuk dapat membuka/menutup clue. Dunia berhenti saat soal terbuka.
 
 Bendera menyimpan checkpoint. Menyelesaikan mesin juga langsung menyimpan titik aman di dekat terminal. Jatuh mengembalikan karakter ke checkpoint; jawaban dan skor tidak hilang. Dua mesin di gua memperlihatkan urutan fungsi dan hasil antara setelah berhasil. Lanjutkan permainan dari browser dan origin yang sama.
 
@@ -76,8 +76,7 @@ Panel alur fungsi besar tidak lagi menutupi medan; detail berada dalam dialog ya
 
 ### Health dan leaderboard lokal
 
-- Mulai dengan 3 health; jatuh mengurangi satu. Pada 0/3 muncul Game Over yang menghentikan dunia, kontrol, musik, dan waktu aktif. Pilih Coba lagi dari checkpoint untuk memulihkan 3 health, atau Menu utama. Jawaban, skor, kunci, koin, jumlah jatuh, dan waktu sebelumnya tetap tersimpan. Jawaban salah tidak mengurangi health.
-- Game Over tetap berlaku setelah reload atau kembali dari menu; Escape tidak melewati pilihan ini. Save lama dengan 1–3 health tetap diterima, dan namespace run yang sama kini juga menyimpan 0 health.
+- Mulai dengan 3 health; jatuh atau jawaban salah mengurangi satu. Health terisi penuh lagi setiap satu wilayah selesai (mis. sisa 1 di Hutan menjadi 3 di wilayah Kristal). Pada 0/3 muncul Game Over yang menghentikan dunia, kontrol, musik, dan waktu aktif. Pilih Coba lagi dari checkpoint untuk memulihkan 3 health, atau Menu utama. Jawaban, skor, kunci, koin, jumlah jatuh, dan waktu sebelumnya tetap tersimpan.- Game Over tetap berlaku setelah reload atau kembali dari menu; Escape tidak melewati pilihan ini. Save lama dengan 1–3 health tetap diterima, dan namespace run yang sama kini juga menyimpan 0 health.
 - Health, jumlah jatuh, serta waktu bermain aktif tersimpan terpisah dari progres belajar. Waktu tidak berjalan di menu, loading, dialog, atau jeda. Petualangan baru mereset run, bukan leaderboard.
 - Setelah tamat, masukkan nama opsional dan simpan hasil satu kali. Leaderboard menampilkan 10 hasil lokal: skor tertinggi, jatuh tersedikit, lalu waktu aktif tercepat. Tersedia dari menu dan layar kemenangan.
 - Tidak ada backend, akun, sinkronisasi lintas perangkat, atau perlindungan manipulasi skor lokal. Jika penyimpanan browser diblokir, gameplay tetap berjalan dan penyimpanan hasil menampilkan kegagalan.

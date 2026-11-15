@@ -37,6 +37,21 @@ test('third fall leaves zero health and does not count further falls until retry
   assert.equal(run.health, 0);
 });
 
+test('wrong answers cost health without counting falls, and stage clear refills it', async () => {
+  const { takeWrongAnswer, resetHealth } = await import('../js/game/run-records.js');
+  const run = createRun();
+  assert.deepEqual(takeWrongAnswer(run), { depleted: false });
+  assert.deepEqual(takeWrongAnswer(run), { depleted: false });
+  assert.equal(run.health, 1);
+  assert.equal(run.falls, 0);
+  resetHealth(run);
+  assert.equal(run.health, 3);
+  takeWrongAnswer(run); takeWrongAnswer(run);
+  assert.deepEqual(takeWrongAnswer(run), { depleted: true });
+  assert.deepEqual(takeWrongAnswer(run), { depleted: true });
+  assert.equal(run.health, 0);
+});
+
 test('zero health survives save and reload without changing learning or leaderboard', () => {
   const storage = memoryStorage([['gundul-warrior-v1', '{"learning":true}'], [LEADERBOARD_KEY, '[]']]);
   const run = { ...createRun(), health: 0, falls: 3, elapsed: 42.5 };
