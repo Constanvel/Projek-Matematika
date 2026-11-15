@@ -2,7 +2,7 @@ import { checkAnswer } from '../data/questions.js';
 import { getMachineFlow } from '../data/machines.js';
 import { completeQuestion } from '../state.js';
 
-export function showQuestion({ question, gate, state, dialog, button, persist, update }) {
+export function showQuestion({ question, gate, state, dialog, button, persist, update, onWrong }) {
   const $ = id => document.getElementById(id);
   const review = state.solved.includes(question.id);
   dialog(question.title);
@@ -86,7 +86,8 @@ export function showQuestion({ question, gate, state, dialog, button, persist, u
       $('dialog-actions').replaceChildren(button('Lanjut menjelajah', () => $('modal').close()));
       update();
     } else {
-      $('feedback').textContent = 'Belum tepat. Gunakan petunjuk untuk mencoba kembali.';
+      if (onWrong?.()) { persist(); return; }
+      $('feedback').textContent = 'Belum tepat. Nyawa berkurang satu. Gunakan petunjuk untuk mencoba kembali.';
       $('feedback').className = 'error';
       setHintVisible(true);
     }
