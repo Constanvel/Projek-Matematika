@@ -38,6 +38,21 @@ export function takeFall(run) {
   return { depleted: run.health === 0 };
 }
 
+/** A wrong answer costs one health but, unlike a fall, is not counted in falls. */
+export function takeWrongAnswer(run) {
+  Object.assign(run, normalizeRun(run));
+  if (run.health === 0) return { depleted: true };
+  run.health -= 1;
+  return { depleted: run.health === 0 };
+}
+
+/** Refill health when a stage is cleared; falls and active time are kept. */
+export function resetHealth(run) {
+  Object.assign(run, normalizeRun(run));
+  run.health = MAX_HEALTH;
+  return run;
+}
+
 /** Restore only an exhausted run, keeping its fall count and active time. */
 export function retryRun(run) {
   Object.assign(run, normalizeRun(run));
