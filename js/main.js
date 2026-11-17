@@ -9,7 +9,7 @@ import { showQuestion } from './ui/questions.js';
 import { createPixelIcon } from './ui/pixel-icons.js';
 import { GameAudio } from './game/audio.js';
 import { startMenuScene } from './game/menu-scene.js';
-import { loadRun, saveRun, resetRun, takeFall, takeWrongAnswer, resetHealth, retryRun, getLeaderboard, recordVictory } from './game/run-records.js';
+import { loadRun, saveRun, resetRun, takeFall, takeWrongAnswer, resetHealth, getLeaderboard, recordVictory } from './game/run-records.js';
 
 const $ = id => document.getElementById(id);
 for (const [id, name] of [['start', 'play'], ['continue', 'play'], ['settings', 'settings'],
@@ -161,7 +161,7 @@ async function enterGame() {
         persist(); updateHud(); audio.play('fall'); lastInteraction = '';
         fallNoticeUntil = performance.now() + 2200; $('game').dataset.contextual = 'true';
         $('interaction').textContent = depleted
-          ? 'Health habis. Wilayah diulang dari awal setelah memilih Ulangi; progres belajar tetap aman.'
+          ? 'Health habis. Petualangan diulang dari awal setelah memilih Mulai ulang.'
           : `Health -1. Kembali ke checkpoint; skor dan jawabanmu tetap aman. Health ${run.health}/3.`;
         if (depleted) gameOver();
       },
@@ -260,12 +260,13 @@ function pause() {
   persist();
 }
 function gameOver() {
-  dialog('Game Over', '', [button('Ulangi dari awal wilayah', () => {
-    retryRun(run);
+  dialog('Game Over', '', [button('Mulai ulang dari awal', () => {
+    // Death is final: wipe learning progress and the run, keeping the same question set.
+    engine?.stop(); engine = null;
+    state = { ...freshState(), questionSeed: state.questionSeed, questionSetVersion: state.questionSetVersion };
+    run = resetRun(recordStorage); measuredEngineTime = 0; lastRunSave = 0;
     fallNoticeUntil = 0; lastInteraction = '';
-    state.checkpoint = 'start';
-    engine?.respawn('start');
-    persist(); updateHud(); closeDialog();
+    persist(); closeDialog(); enterGame();
   }, true, 'play'), button('Menu utama', () => {
     previousFocus = $('continue'); modal.close(); home();
   }, false, 'home')]);
@@ -276,7 +277,7 @@ function gameOver() {
   hearts.setAttribute('aria-hidden', 'true');
   for (let index = 0; index < run.maxHealth; index++) hearts.append(createPixelIcon('heart-empty'));
   const message = document.createElement('p');
-  message.textContent = 'Tiga nyawamu habis. Jawaban, skor, kunci, dan koin tetap tersimpan. Ulangi wilayah ini dari awal dengan tiga nyawa baru.';
+  message.textContent = 'Tiga nyawamu habis. Semua jawaban, skor, kunci, koin, jumlah jatuh, dan waktu hangus. Petualangan diulang dari wilayah pertama dengan tiga nyawa baru.';
   $('dialog-content').replaceChildren(hearts, message);
 }
 function victory() {
@@ -403,8 +404,8 @@ function help() {
     ['Bergerak dan berinteraksi', 'A/D atau panah kiri/kanan untuk berjalan. Space, W, atau panah atas untuk melompat. Tahan lompat untuk menjangkau pijakan tinggi, lepaskan lalu tekan lagi setelah mendarat. Di ponsel, tahan arah sambil menekan Lompat. Dekati mesin atau peti, lalu tekan E atau tombol Interaksi.'],
     ['Mekanik tiap wilayah', 'Akar pegas di hutan memberi dorongan saat kamu menekan lompat. Es licin di gua: lepas arah lebih awal atau tekan arah berlawanan untuk mengerem. Batu retak di kastel runtuh setelah diinjak; teruskan lompatan, lalu tunggu sampai pijakan pulih jika perlu.'],
     ['Mesin, kunci, dan checkpoint', 'Jawaban benar memulihkan mesin serta membuka gerbang atau jembatan. Tiga mesin utama tiap wilayah memberi satu kunci; tiga kunci membuka ruang harta. Pulihkan semua 12 mesin dan buka peti terakhir. Bendera serta mesin yang selesai menyimpan checkpoint. Mesin aktif dapat ditinjau lagi. Komposisi f(g(x)) berarti kerjakan g dahulu, kemudian f. Invers membalikkan operasi; dekripsi dua tahap membalikkan urutan kedua kunci.'],
-    ['Nyawa dan catatan perjalanan', 'Tiga hati menunjukkan sisa nyawa. Setiap jatuh atau jawaban salah mengurangi satu. Nyawa terisi penuh lagi setiap menyelesaikan satu wilayah. Saat habis, Game Over menghentikan permainan. Pilih Ulangi untuk memulai wilayah dari awal dengan tiga nyawa baru. Skor dan jawaban tetap aman ketika jatuh. Koin dan jalur rahasia bersifat opsional. Leaderboard lokal menyimpan skor, jumlah jatuh, dan waktu aktif; waktu berhenti saat jeda, Game Over, atau soal terbuka.'],
-    ['Variasi soal', 'Petualangan baru memilih paket soal berbeda. Lanjutkan, reload, meninjau mesin, dan Ulangi wilayah mempertahankan soal yang sama. Save lama tetap memakai paket awal.'],
+    ['Nyawa dan catatan perjalanan', 'Tiga hati menunjukkan sisa nyawa. Setiap jatuh atau jawaban salah mengurangi satu. Nyawa terisi penuh lagi setiap menyelesaikan satu wilayah. Saat habis, Game Over menghentikan permainan. Pilih Mulai ulang untuk mengulang seluruh petualangan dari wilayah pertama; skor, jawaban, kunci, dan koin dihapus. Leaderboard tidak berubah. Koin dan jalur rahasia bersifat opsional. Leaderboard lokal menyimpan skor, jumlah jatuh, dan waktu aktif; waktu berhenti saat jeda, Game Over, atau soal terbuka.'],
+    ['Variasi soal', 'Petualangan baru memilih paket soal berbeda. Lanjutkan, reload, meninjau mesin, dan Mulai ulang setelah Game Over mempertahankan soal yang sama. Save lama tetap memakai paket awal.'],
   ];
   const guide = document.createElement('div'); guide.className = 'play-guide';
   for (const [title, text] of sections) {
