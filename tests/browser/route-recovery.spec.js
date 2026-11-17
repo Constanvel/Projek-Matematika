@@ -24,7 +24,7 @@ test('every parkour checkpoint survives walking falls and reload with learning i
       await expect(page.locator('#board')).toHaveAttribute('data-player-x', String(route.start));
       if (await page.locator('#modal[data-mode="game-over"]').isVisible()) {
         await expect(page.locator('#health')).toHaveText('0/3');
-        await page.getByRole('button', { name: 'Ulangi dari awal wilayah', exact: true }).click();
+        await page.getByRole('button', { name: 'Mulai ulang dari awal', exact: true }).click();
         await expect(page.locator('#health')).toHaveText('3/3');
         // Retry restarts the stage, so reapply the fixture checkpoint under test.
         await page.reload(); await page.locator('#continue').click();

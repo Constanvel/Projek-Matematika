@@ -101,17 +101,18 @@ test('third live fall shows persistent Game Over and explicit retry preserves le
   expect((await readStored(page, RUN_KEY)).health).toBe(0);
   await page.locator('#continue').click();
   await expect(page.locator('#dialog-title')).toHaveText('Game Over');
-  await page.getByRole('button', { name: 'Ulangi dari awal wilayah', exact: true }).click();
+  await page.getByRole('button', { name: 'Mulai ulang dari awal', exact: true }).click();
   await expect(page.locator('#modal')).toBeHidden();
   await expect(page.locator('#health')).toHaveText('3/3');
   await expect(page.locator('#health-status [data-icon="heart-full"]')).toHaveCount(3);
   await expect(page.locator('#health-status [data-icon="heart-empty"]')).toHaveCount(0);
   await expect(page.locator('#board')).toBeFocused();
   await expect(page.locator('#board')).toHaveAttribute('data-player-x', '80');
-  expect((await readStored(page, STATE_KEY)).solved).toEqual(state.solved);
+  expect((await readStored(page, STATE_KEY)).solved).toEqual([]);
+  expect((await readStored(page, STATE_KEY)).level).toBe(0);
   expect((await readStored(page, STATE_KEY)).checkpoint).toBe('start');
-  await expect(page.locator('#score')).toHaveText('10');
-  expect(await readStored(page, RUN_KEY)).toMatchObject({ health: 3, falls: 3, completed: false, recorded: false });
+  await expect(page.locator('#score')).toHaveText('0');
+  expect(await readStored(page, RUN_KEY)).toMatchObject({ health: 3, falls: 0, elapsed: 0, completed: false, recorded: false });
 
   await page.locator('#pause').click();
   await expect(page.locator('#modal')).toBeVisible();
@@ -136,7 +137,7 @@ test('saved Game Over has usable retry controls on portrait and landscape screen
   await page.goto('/'); await page.locator('#continue').click();
   await expect(page.locator('#dialog-title')).toHaveText('Game Over');
   await expect(page.locator('#board')).toHaveAttribute('data-paused', 'true');
-  const retry = page.getByRole('button', { name: 'Ulangi dari awal wilayah', exact: true });
+  const retry = page.getByRole('button', { name: 'Mulai ulang dari awal', exact: true });
   for (const [width, height] of [[390, 844], [740, 360], [320, 568]]) {
     await page.setViewportSize({ width, height });
     await retry.scrollIntoViewIfNeeded();
@@ -148,7 +149,7 @@ test('saved Game Over has usable retry controls on portrait and landscape screen
   await retry.click();
   await expect(page.locator('#health')).toHaveText('3/3');
   await expect(page.locator('#board')).toHaveAttribute('data-paused', 'false');
-  await expect(page.locator('#score')).toHaveText('10');
+  await expect(page.locator('#score')).toHaveText('0');
   await expect(page.locator('#health-status [data-icon="heart-full"]')).toHaveCount(3);
   expect((await readStored(page, STATE_KEY)).questionSeed).toBe(12345);
 });
