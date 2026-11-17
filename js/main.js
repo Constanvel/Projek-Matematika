@@ -161,7 +161,7 @@ async function enterGame() {
         persist(); updateHud(); audio.play('fall'); lastInteraction = '';
         fallNoticeUntil = performance.now() + 2200; $('game').dataset.contextual = 'true';
         $('interaction').textContent = depleted
-          ? 'Health habis. Kembali ke checkpoint setelah memilih Coba lagi; progres belajar tetap aman.'
+          ? 'Health habis. Wilayah diulang dari awal setelah memilih Ulangi; progres belajar tetap aman.'
           : `Health -1. Kembali ke checkpoint; skor dan jawabanmu tetap aman. Health ${run.health}/3.`;
         if (depleted) gameOver();
       },
@@ -260,10 +260,11 @@ function pause() {
   persist();
 }
 function gameOver() {
-  dialog('Game Over', '', [button('Coba lagi dari checkpoint', () => {
+  dialog('Game Over', '', [button('Ulangi dari awal wilayah', () => {
     retryRun(run);
     fallNoticeUntil = 0; lastInteraction = '';
-    engine?.respawn(state.checkpoint);
+    state.checkpoint = 'start';
+    engine?.respawn('start');
     persist(); updateHud(); closeDialog();
   }, true, 'play'), button('Menu utama', () => {
     previousFocus = $('continue'); modal.close(); home();
@@ -275,7 +276,7 @@ function gameOver() {
   hearts.setAttribute('aria-hidden', 'true');
   for (let index = 0; index < run.maxHealth; index++) hearts.append(createPixelIcon('heart-empty'));
   const message = document.createElement('p');
-  message.textContent = 'Tiga nyawamu habis. Jawaban, skor, kunci, dan koin tetap tersimpan. Coba lagi dari checkpoint terakhir dengan tiga nyawa baru.';
+  message.textContent = 'Tiga nyawamu habis. Jawaban, skor, kunci, dan koin tetap tersimpan. Ulangi wilayah ini dari awal dengan tiga nyawa baru.';
   $('dialog-content').replaceChildren(hearts, message);
 }
 function victory() {
@@ -402,8 +403,8 @@ function help() {
     ['Bergerak dan berinteraksi', 'A/D atau panah kiri/kanan untuk berjalan. Space, W, atau panah atas untuk melompat. Tahan lompat untuk menjangkau pijakan tinggi, lepaskan lalu tekan lagi setelah mendarat. Di ponsel, tahan arah sambil menekan Lompat. Dekati mesin atau peti, lalu tekan E atau tombol Interaksi.'],
     ['Mekanik tiap wilayah', 'Akar pegas di hutan memberi dorongan saat kamu menekan lompat. Es licin di gua: lepas arah lebih awal atau tekan arah berlawanan untuk mengerem. Batu retak di kastel runtuh setelah diinjak; teruskan lompatan, lalu tunggu sampai pijakan pulih jika perlu.'],
     ['Mesin, kunci, dan checkpoint', 'Jawaban benar memulihkan mesin serta membuka gerbang atau jembatan. Tiga mesin utama tiap wilayah memberi satu kunci; tiga kunci membuka ruang harta. Pulihkan semua 12 mesin dan buka peti terakhir. Bendera serta mesin yang selesai menyimpan checkpoint. Mesin aktif dapat ditinjau lagi. Komposisi f(g(x)) berarti kerjakan g dahulu, kemudian f. Invers membalikkan operasi; dekripsi dua tahap membalikkan urutan kedua kunci.'],
-    ['Nyawa dan catatan perjalanan', 'Tiga hati menunjukkan sisa nyawa. Setiap jatuh atau jawaban salah mengurangi satu. Nyawa terisi penuh lagi setiap menyelesaikan satu wilayah. Saat habis, Game Over menghentikan permainan. Pilih Coba lagi dari checkpoint untuk kembali dengan tiga nyawa baru. Skor dan jawaban tetap aman ketika jatuh. Koin dan jalur rahasia bersifat opsional. Leaderboard lokal menyimpan skor, jumlah jatuh, dan waktu aktif; waktu berhenti saat jeda, Game Over, atau soal terbuka.'],
-    ['Variasi soal', 'Petualangan baru memilih paket soal berbeda. Lanjutkan, reload, meninjau mesin, dan Coba lagi dari checkpoint mempertahankan soal yang sama. Save lama tetap memakai paket awal.'],
+    ['Nyawa dan catatan perjalanan', 'Tiga hati menunjukkan sisa nyawa. Setiap jatuh atau jawaban salah mengurangi satu. Nyawa terisi penuh lagi setiap menyelesaikan satu wilayah. Saat habis, Game Over menghentikan permainan. Pilih Ulangi untuk memulai wilayah dari awal dengan tiga nyawa baru. Skor dan jawaban tetap aman ketika jatuh. Koin dan jalur rahasia bersifat opsional. Leaderboard lokal menyimpan skor, jumlah jatuh, dan waktu aktif; waktu berhenti saat jeda, Game Over, atau soal terbuka.'],
+    ['Variasi soal', 'Petualangan baru memilih paket soal berbeda. Lanjutkan, reload, meninjau mesin, dan Ulangi wilayah mempertahankan soal yang sama. Save lama tetap memakai paket awal.'],
   ];
   const guide = document.createElement('div'); guide.className = 'play-guide';
   for (const [title, text] of sections) {
