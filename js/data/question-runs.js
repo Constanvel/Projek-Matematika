@@ -39,7 +39,6 @@ export function generateRunQuestions(seed, version = QUESTION_SET_VERSION) {
   };
   const linear = (name, a, b) => `${name}(x) = ${a === 1 ? '' : a}x ${b < 0 ? '−' : '+'} ${Math.abs(b)}`;
   const path = (input, steps, label = '') => ({ input, steps: steps.map(([name, output]) => ({ name, output })), label });
-  const generic = labels => ({ kind: 'mixed', labels });
 
   {
     const a = integer(2, 5), b = integer(1, 7), n = integer(1, 6), answer = a * n + b;
@@ -95,62 +94,8 @@ export function generateRunQuestions(seed, version = QUESTION_SET_VERSION) {
       { kind: 'comparison', paths: [path(n, [['g', n ** 2], ['f', fg]], 'f ∘ g'),
         path(n, [['f', a * n + b], ['g', gf]], 'g ∘ f')], difference: fg - gf });
   }
-  {
-    const op = ['+', '−', '×', '÷'][integer(0, 3)], n = integer(1, 4), c = integer(1, 3), d = integer(1, 4);
-    const multiplier = integer(2, 4), a = op === '÷' ? c * multiplier : integer(2, 4);
-    const b = op === '÷' ? d * multiplier : integer(1, 6), f = a * n + b, g = c * n + d;
-    const answer = op === '+' ? f + g : op === '−' ? f - g : op === '×' ? f * g : f / g;
-    const functions = `${linear('f', a, b)}; ${linear('g', c, d)}`;
-    add('Operasi aljabar fungsi', `Jika ${functions}, berapakah (f ${op} g)(${n})?${op === '÷' ? ` Gunakan g(${n}) ≠ 0.` : ''}`, functions, answer,
-      'Hitung nilai kedua fungsi pada input yang sama, lalu lakukan operasi yang diminta.',
-      [`f(${n}) = ${f}; g(${n}) = ${g}.`, `(f ${op} g)(${n}) = ${f} ${op} ${g} = ${answer}.${op === '÷' ? ' Penyebut tidak nol.' : ''}`],
-      generic(['HITUNG KEDUA FUNGSI', 'GUNAKAN OPERASI YANG DIMINTA']));
-  }
-  {
-    const a = integer(2, 5), b = integer(1, 8), functions = linear('f', a, b), answer = `(x − ${b}) / ${a}`;
-    add('Invers fungsi linear', `Untuk x real, jika ${functions}, manakah rumus f⁻¹(x)?`, functions, answer,
-      'Misalkan y = f(x), lalu nyatakan x dalam y. Invers bukan 1/f(x).',
-      [`y = ${a}x + ${b}, sehingga y − ${b} = ${a}x.`, `x = (y − ${b}) / ${a}; jadi f⁻¹(x) = ${answer}.`],
-      generic(['OUTPUT LAMA', 'BALIKKAN OPERASI', 'INPUT SEMULA']),
-      [`(x + ${b}) / ${a}`, `${a}x − ${b}`, `x / ${a} − ${b}`]);
-  }
-  {
-    const a = integer(2, 5), b = integer(1, 6), c = integer(1, 6);
-    const functions = `${linear('f', a, b)}; ${linear('g', 1, c)}`;
-    add('Invers komposisi fungsi', `Fungsi f dan g bijektif pada bilangan real. Jika ${functions} dan h = f ∘ g, manakah h⁻¹(x)?`, functions, 'g⁻¹(f⁻¹(x))',
-      'Enkripsi g lalu f dibatalkan dengan invers f terlebih dahulu, kemudian invers g.',
-      ['h(x) = f(g(x)): input melewati g kemudian f.', 'Urutan pembaliknya adalah f⁻¹ kemudian g⁻¹; jadi h⁻¹ = g⁻¹ ∘ f⁻¹.'],
-      generic(['BALIKKAN F TERLEBIH DAHULU', 'KEMUDIAN BALIKKAN G']),
-      ['f⁻¹(g⁻¹(x))', 'f(g(x))', 'g(f(x))']);
-  }
-  {
-    const a = integer(2, 4), b = integer(1, 5), c = integer(2, 3), d = integer(1, 4), p = integer(2, 9);
-    const middle = c * p + d, cipher = a * middle + b, reverse = c * (a * p + b) + d;
-    const functions = `${linear('f', a, b)}; ${linear('g', c, d)}; E = f ∘ g`;
-    add('Enkripsi dua tahap', `Satu karakter memiliki kode bilangan p = ${p}. Dengan ${functions}, berapakah cipherteks E(p)?`, functions, cipher,
-      'Ini simulasi enkripsi matematika: gunakan kunci g dahulu, lalu kunci f.',
-      [`g(${p}) = ${c}(${p}) + ${d} = ${middle}.`, `E(${p}) = f(${middle}) = ${a}(${middle}) + ${b} = ${cipher}.`],
-      { kind: 'composition', paths: [path(p, [['g', middle], ['f', cipher]], 'E = f ∘ g')] },
-      [reverse, cipher + a, cipher - c, cipher + 1, cipher + 2]);
-  }
-  {
-    const a = integer(2, 5), b = integer(1, 7), p = integer(1, 15), cipher = a * p + b;
-    const functions = linear('E', a, b);
-    add('Dekripsi dengan invers', `Kode pesan dienkripsi menggunakan ${functions}. Jika diterima cipherteks c = ${cipher}, berapakah kode awalnya?`, functions, p,
-      'Batalkan penjumlahan terlebih dahulu, kemudian batalkan perkalian.',
-      [`E⁻¹(x) = (x − ${b}) / ${a}.`, `E⁻¹(${cipher}) = (${cipher} − ${b}) / ${a} = ${p}.`],
-      { kind: 'inverse', paths: [path(cipher, [['E⁻¹', p]], 'Dekripsi')] });
-  }
-  {
-    const a = integer(2, 4), b = integer(1, 5), c = integer(2, 3), d = integer(1, 4), p = integer(2, 9);
-    const middle = c * p + d, cipher = a * middle + b;
-    const functions = `${linear('f', a, b)}; ${linear('g', c, d)}; E = f ∘ g`;
-    add('Dekripsi enkripsi ganda', `Sebuah kode dienkripsi memakai ${functions}. Jika diterima cipherteks c = ${cipher}, berapakah kode awalnya?`, functions, p,
-      'Balikkan f terlebih dahulu, kemudian g; urutan dekripsi berlawanan dengan enkripsi.',
-      [`Batalkan f: (${cipher} − ${b}) / ${a} = ${middle}.`, `Batalkan g: (${middle} − ${d}) / ${c} = ${p}.`, `Kode awal ${p} kembali menjadi ${cipher} setelah dienkripsi g lalu f.`],
-      { kind: 'inverse-composition', paths: [path(cipher, [['f⁻¹', middle], ['g⁻¹', p]], 'Dekripsi E')] });
-  }
-  return bank;
+  // Stage 3 (q7–q12) is fixed: same questions every run.
+  return [...bank, ...legacyQuestions.slice(6)];
 }
 
 /** Old saves have no seed and keep their original questions and worked answers. */
