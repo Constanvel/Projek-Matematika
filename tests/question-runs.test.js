@@ -18,9 +18,13 @@ const affine = (text, name) => {
 const chosen = question => question.type === 'number' ? question.answer
   : question.options.find(option => option.id === question.answer).label;
 
+test('stage 3 questions are identical for every seed', () => {
+  for (let seed = 1; seed <= 64; seed++) assert.deepEqual(generate(seed).slice(6), generate(1).slice(6));
+});
+
 test('question runs repeat exactly for a saved seed and vary across new runs', () => {
   assert.deepEqual(generate(12345), generate(12345));
-  assert.notDeepEqual(generate(12345).map(q => q.prompt), generate(98765).map(q => q.prompt));
+  assert.notDeepEqual(generate(12345).slice(0, 6).map(q => q.prompt), generate(98765).slice(0, 6).map(q => q.prompt));
   const state = { ...freshState(), questionSeed: 12345, questionSetVersion: 1 };
   assert.deepEqual(validateState(state), state);
   assert.deepEqual(api.questionsForState(validateState(JSON.parse(JSON.stringify(state)))), generate(12345));
@@ -91,10 +95,8 @@ test('generated numeric exercises and encryption round trips agree with independ
 });
 
 test('relation and inverse choices have exactly one mathematically valid answer after shuffling', () => {
-  const positions = new Set();
   for (let seed = 1; seed <= 64; seed++) {
     const bank = generate(seed), relation = bank[2], inverse = bank[7], composition = bank[8];
-    positions.add(inverse.answer);
     const domain = relation.functions.match(/A = \{([^}]+)\}/)[1].split(',').map(Number);
     const validRelations = relation.options.filter(option => {
       const pairs = [...option.label.matchAll(/\((\d+), (\d+)\)/g)].map(match => [Number(match[1]), Number(match[2])]);
@@ -119,5 +121,4 @@ test('relation and inverse choices have exactly one mathematically valid answer 
       Math.abs(outer.value(inner.value(formulas[option.label](y))) - y) < 1e-9));
     assert.deepEqual(validOrders.map(option => option.id), [composition.answer]);
   }
-  assert.equal(positions.size, 4);
 });
