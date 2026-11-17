@@ -134,8 +134,8 @@ Contoh di atas adalah acuan materi, bukan kewajiban mengganti bank soal reposito
 - Untuk komposisi, tampilkan urutan fungsi dan hasil antara, bukan jawaban akhir saja.
 - Tidak menggunakan `eval` untuk memeriksa jawaban. Semua soal dan pengecoh divalidasi manual serta melalui unit test.
 - Jumlah jawaban benar pada ringkasan berarti jumlah soal unik selesai, bukan jumlah pengiriman jawaban.
-- Petualangan baru mengacak parameter dan posisi opsi tanpa mengubah urutan
-  q1–q12. Seed dan versi paket disimpan; reload, review, jawaban salah, serta
+- Petualangan baru mengacak parameter dan posisi opsi q1–q6 tanpa mengubah urutan
+  soal. Stage 3 (q7–q12) selalu memakai soal tetap yang sama. Seed dan versi paket disimpan; reload, review, jawaban salah, serta
   retry Game Over tidak mengacak ulang. Save lama melanjutkan soal asli.
 
 ## 8. Arah visual: pixel art 2D
