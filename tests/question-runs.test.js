@@ -18,9 +18,13 @@ const affine = (text, name) => {
 const chosen = question => question.type === 'number' ? question.answer
   : question.options.find(option => option.id === question.answer).label;
 
+test('stage 3 questions are identical for every seed', () => {
+  for (let seed = 1; seed <= 64; seed++) assert.deepEqual(generate(seed).slice(6), generate(1).slice(6));
+});
+
 test('question runs repeat exactly for a saved seed and vary across new runs', () => {
   assert.deepEqual(generate(12345), generate(12345));
-  assert.notDeepEqual(generate(12345).map(q => q.prompt), generate(98765).map(q => q.prompt));
+  assert.notDeepEqual(generate(12345).slice(0, 6).map(q => q.prompt), generate(98765).slice(0, 6).map(q => q.prompt));
   const state = { ...freshState(), questionSeed: 12345, questionSetVersion: 1 };
   assert.deepEqual(validateState(state), state);
   assert.deepEqual(api.questionsForState(validateState(JSON.parse(JSON.stringify(state)))), generate(12345));
@@ -64,6 +68,24 @@ test('generated numeric exercises and encryption round trips agree with independ
       } else if (id === 6) {
         const f = affine(q.functions, 'f'); const n = Number(q.prompt.match(/f\(g\((\d+)\)\) −/)[1]);
         expected = f.value(n ** 2) - f.value(n) ** 2;
+      } else if (id === 7) {
+        const f = affine(q.functions, 'f'), g = affine(q.functions, 'g');
+        const [, op, raw] = q.prompt.match(/\(f ([+−×÷]) g\)\((\d+)\)/); const n = Number(raw);
+        expected = op === '+' ? f.value(n) + g.value(n) : op === '−' ? f.value(n) - g.value(n)
+          : op === '×' ? f.value(n) * g.value(n) : f.value(n) / g.value(n);
+      } else if (id === 10) {
+        const f = affine(q.functions, 'f'), g = affine(q.functions, 'g');
+        expected = f.value(g.value(Number(q.prompt.match(/p = (\d+)/)[1])));
+      } else if (id === 11) {
+        const e = affine(q.functions, 'E'); const cipher = Number(q.prompt.match(/c = (\d+)/)[1]);
+        expected = e.inverse(cipher); assert.equal(e.value(expected), cipher);
+      } else if (id === 12) {
+        const f = affine(q.functions, 'f'), g = affine(q.functions, 'g');
+        const cipher = Number(q.prompt.match(/c = (\d+)/)[1]); expected = g.inverse(f.inverse(cipher));
+        assert.equal(f.value(g.value(expected)), cipher);
+        const flow = getMachineFlow(q.id, true, q.machine).paths[0];
+        assert.equal(flow.input, cipher); assert.equal(flow.steps[0].output, f.inverse(cipher));
+        assert.equal(flow.output, expected);
       }
       if (expected !== undefined) {
         assert.ok(Number.isInteger(expected)); assert.equal(Number(chosen(q)), expected, `${seed}/${q.id}`);
@@ -72,18 +94,31 @@ test('generated numeric exercises and encryption round trips agree with independ
   }
 });
 
-test('stage 3 questions are identical for every seed', () => {
-  for (let seed = 1; seed <= 64; seed++) assert.deepEqual(generate(seed).slice(6), questions.slice(6));
-});
-
-test('relation choices have exactly one valid answer after shuffling', () => {
+test('relation and inverse choices have exactly one mathematically valid answer after shuffling', () => {
   for (let seed = 1; seed <= 64; seed++) {
-    const relation = generate(seed)[2];
+    const bank = generate(seed), relation = bank[2], inverse = bank[7], composition = bank[8];
     const domain = relation.functions.match(/A = \{([^}]+)\}/)[1].split(',').map(Number);
-    const valid = relation.options.filter(option => {
-      const pairs = [...option.label.matchAll(/\((\d+), (\d+)\)/g)].map(m => [Number(m[1]), Number(m[2])]);
+    const validRelations = relation.options.filter(option => {
+      const pairs = [...option.label.matchAll(/\((\d+), (\d+)\)/g)].map(match => [Number(match[1]), Number(match[2])]);
       return domain.every(x => pairs.filter(pair => pair[0] === x).length === 1);
     });
-    assert.deepEqual(valid.map(option => option.id), [relation.answer]);
+    assert.deepEqual(validRelations.map(option => option.id), [relation.answer]);
+    const f = affine(inverse.functions, 'f');
+    const validInverses = inverse.options.filter(option => {
+      const label = option.label, match = label.match(/^\(x ([−+]) (\d+)\) \/ (\d+)$/);
+      if (!match) return false;
+      return [-7, 0, 13].every(y => Math.abs(f.value((y + Number(match[2]) * (match[1] === '−' ? -1 : 1)) / Number(match[3])) - y) < 1e-9);
+    });
+    assert.deepEqual(validInverses.map(option => option.id), [inverse.answer]);
+    const outer = affine(composition.functions, 'f'), inner = affine(composition.functions, 'g');
+    const formulas = {
+      'g⁻¹(f⁻¹(x))': x => inner.inverse(outer.inverse(x)),
+      'f⁻¹(g⁻¹(x))': x => outer.inverse(inner.inverse(x)),
+      'f(g(x))': x => outer.value(inner.value(x)),
+      'g(f(x))': x => inner.value(outer.value(x)),
+    };
+    const validOrders = composition.options.filter(option => [-7, 0, 13].every(y =>
+      Math.abs(outer.value(inner.value(formulas[option.label](y))) - y) < 1e-9));
+    assert.deepEqual(validOrders.map(option => option.id), [composition.answer]);
   }
 });
