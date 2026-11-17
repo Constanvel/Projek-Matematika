@@ -11,7 +11,8 @@ export function newQuestionSeed(previous) {
 }
 
 /** Versioned, deterministic variants: never reroll a question on retry or reload. */
-export function generateRunQuestions(seed, version = QUESTION_SET_VERSION) {
+const STAGE3_SEED = 2; // q7–q12 always use this seed's values: fixed for every run
+const build = (seed, version) => {
   if (!validQuestionSeed(seed) || version !== QUESTION_SET_VERSION) throw new RangeError('Unknown question run');
   let cursor = seed >>> 0;
   const integer = (min, max) => {
@@ -151,7 +152,10 @@ export function generateRunQuestions(seed, version = QUESTION_SET_VERSION) {
       { kind: 'inverse-composition', paths: [path(cipher, [['f⁻¹', middle], ['g⁻¹', p]], 'Dekripsi E')] });
   }
   return bank;
-}
+};
+
+export const generateRunQuestions = (seed, version = QUESTION_SET_VERSION) =>
+  [...build(seed, version).slice(0, 6), ...build(STAGE3_SEED, version).slice(6)];
 
 /** Old saves have no seed and keep their original questions and worked answers. */
 export function questionsForState(state) {
